@@ -85,11 +85,11 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
  * @param handle     The plugin handle returned from plugin_init
  * @param readingSet The readings to process
  */
-void plugin_ingest(PLUGIN_HANDLE *handle,
+void plugin_ingest(PLUGIN_HANDLE handle,
                    READINGSET *readingSet)
 {
-        IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
-        pivotFilter->ingest(readingSet);
+    IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
+    pivotFilter->ingest(readingSet);
 }
 
 /**
@@ -98,19 +98,19 @@ void plugin_ingest(PLUGIN_HANDLE *handle,
  * @param handle     The plugin handle
  * @param newConfig  The updated configuration
  */
-void plugin_reconfigure(PLUGIN_HANDLE *handle, const std::string& newConfig)
+void plugin_reconfigure(PLUGIN_HANDLE handle, const std::string& newConfig)
 {
-        IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
-        pivotFilter->reconfigure(newConfig);
+    IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
+    pivotFilter->reconfigure(newConfig);
 }
 
 /**
  * Call the shutdown method in the plugin
  */
-void plugin_shutdown(PLUGIN_HANDLE *handle)
+void plugin_shutdown(PLUGIN_HANDLE handle)
 {
-        IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
-        delete pivotFilter;
+    IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
+    delete pivotFilter;
 }
 
 // End of extern "C"

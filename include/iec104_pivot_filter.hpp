@@ -5,7 +5,7 @@
 
 using namespace std;
 
-class IEC104PivotFilter : public FledgeFilter {
+class IEC104PivotFilter {
 
 public:
     IEC104PivotFilter(const std::string& filterName,
@@ -20,6 +20,8 @@ public:
 
 private:
 
+    OUTPUT_HANDLE* m_outHandle;
+    OUTPUT_STREAM m_output;
 };
 
 
