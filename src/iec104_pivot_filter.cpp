@@ -99,6 +99,23 @@ IEC104PivotFilter::addQuality(Datapoint* dp, bool bl, bool iv, bool nt, bool ov,
     }
 }
 
+void
+IEC104PivotFilter::addTimestamp(Datapoint* dp, long timestamp, bool iv, bool su, bool sub)
+{
+    Datapoint* t = addElement(dp, "t");
+
+    float fractionOfSecond = (float)(timestamp % 1000)/1000.f;
+
+    addElementWithValue(t, "SecondSinceEpoch", timestamp/1000);
+    addElementWithValue(t, "FractionOfSecond", fractionOfSecond);
+
+    Datapoint* timeQuality = addElement(t, "TimeQuality");
+
+    addElementWithValue(timeQuality, "clockFailure", (long)(iv ? 1 : 0));
+    addElementWithValue(timeQuality, "leapSecondKnown", (long)1);
+    addElementWithValue(timeQuality, "timeAccuracy", (long)10);
+}
+
 template <class T>
 Datapoint*
 IEC104PivotFilter::addElementWithValue(Datapoint* dp, string elementPath, const T value)
@@ -146,6 +163,16 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
         bool doQualitySb = false;
         bool doQualityNt = false;
 
+        bool hasDoTs = false;
+        bool hasDoTsIv = false;
+        bool hasDoTsSu = false;
+        bool hasDoTsSub = false;
+
+        long doTs = 0;
+        bool doTsIv = false;
+        bool doTsSu = false;
+        bool doTsSub = false;
+
         Datapoint* doValue = nullptr;
 
         for (Datapoint* dp : *datapoints) {
@@ -156,17 +183,11 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                     doType = dp->getData().toStringValue();
                     hasDoType = true;
                 }
-                else {
-                    //TODO log error
-                }
             }
             else if ((hasDoCot == false) && (dp->getName() == "do_cot")) {
                 if (dp->getData().getType() == DatapointValue::T_INTEGER) {
                     doCot = dp->getData().toInt();
                     hasDoCot = true;
-                }
-                else {
-                    //TODO log error
                 }
             }
             else if ((doValue == nullptr) && (dp->getName() == "do_value"))
@@ -213,6 +234,36 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                
                 hasDoQualityNt = true;
             }
+            else if ((hasDoTs == false) && (dp->getName() == "do_ts")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    doTs = dp->getData().toInt();
+                    hasDoTs = true;
+                }
+            }
+            else if ((hasDoTsIv == false) && (dp->getName() == "do_ts_iv")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (dp->getData().toInt() > 0)
+                        doTsIv = true;
+                }
+               
+                hasDoTsIv = true;
+            }
+            else if ((hasDoTsSu == false) && (dp->getName() == "do_ts_su")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (dp->getData().toInt() > 0)
+                        doTsSu = true;
+                }
+               
+                hasDoTsSu = true;
+            }
+            else if ((hasDoTsSub == false) && (dp->getName() == "do_ts_sub")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (dp->getData().toInt() > 0)
+                        doTsSub = true;
+                }
+               
+                hasDoTsSub = true;
+            }
         }
 
         //NOTE: when doValue is missing it could be an ACK!
@@ -224,6 +275,8 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                 Datapoint* pivotts = createDp("PIVOTTS");
 
                 Datapoint* gtis = addElement(pivotts, "GTIS");
+
+                addElementWithValue(gtis, "Identifier", exchangeConfig->getPivotId());
 
                 Datapoint* gtis_Cause = addElement(gtis, "Cause");
 
@@ -246,6 +299,10 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                 }
 
                 addQuality(gtis_spsTyp, doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, false);
+
+                if (hasDoTs) {
+                    addTimestamp(gtis_spsTyp, doTs, doTsIv, doTsSu, doTsSub);
+                }
                 
                 convertedDatapoint = pivotts;
             }

@@ -25,6 +25,8 @@ private:
 
     void addQuality(Datapoint* dp, bool bl, bool iv, bool nt, bool ov, bool sb, bool test);
 
+    void addTimestamp(Datapoint* dp, long timestamp, bool iv, bool su, bool sub);
+
     template <class T>
     Datapoint* addElementWithValue(Datapoint* dp, string elementPath, const T value);
 

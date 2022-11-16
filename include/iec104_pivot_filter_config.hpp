@@ -12,6 +12,8 @@ public:
     IEC104PivotDataPoint(string label, string pivotId, string pivotType, string typeIdString, int ca, int ioa, string altMappingRule);
     ~IEC104PivotDataPoint();
 
+    std::string& getPivotId() {return m_pivotId;};
+
 private:
     std::string m_label;
     std::string m_pivotId;
