@@ -16,9 +16,19 @@ IEC104PivotDataPoint::IEC104PivotDataPoint(string label, string pivotId, string 
     m_alternateMappingRule = altMappingRule;
 }
 
-IEC104PivotConfig::IEC104PivotConfig()
+IEC104PivotDataPoint::~IEC104PivotDataPoint()
 {
 
+}
+
+IEC104PivotConfig::IEC104PivotConfig()
+{
+    m_exchangeConfigComplete = false;
+}
+
+IEC104PivotConfig::~IEC104PivotConfig()
+{
+    deleteExchangeDefinitions();
 }
 
 #define PROTOCOL_IEC104 "iec104"
@@ -83,6 +93,8 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
             if (protocolName == PROTOCOL_IEC104) {
 
+                printf("Found iec104 data point config (label: %s)\n", label.c_str());
+
                 if (!protocol.HasMember(JSON_PROT_ADDR) || !protocol[JSON_PROT_ADDR].IsString()) return;
                 if (!protocol.HasMember(JSON_PROT_TYPEID) || !protocol[JSON_PROT_TYPEID].IsString()) return;
 
@@ -91,7 +103,7 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
                 string alternateMappingRule = "";
 
-                if (!protocol.HasMember("alternate_mapping_rule")) {
+                if (protocol.HasMember("alternate_mapping_rule")) {
                     alternateMappingRule = protocol["alternate_mapping_rule"].GetString();
                 }
 
@@ -122,5 +134,16 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 void
 IEC104PivotConfig::deleteExchangeDefinitions()
 {
+    //release elements of map
+    auto it = m_exchangeDefinitions.begin();
+
+    while (it != m_exchangeDefinitions.end()) {
+        IEC104PivotDataPoint* dp = it->second;
+
+        delete dp;
+
+        it++;
+    }
+
     m_exchangeDefinitions.clear();
 }

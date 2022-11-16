@@ -74,7 +74,7 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
     Logger::getLogger()->info("Initializing the plugin");
 
     IEC104PivotFilter* pivotFilter = new IEC104PivotFilter(PLUGIN_NAME,
-                                *config, outHandle, output);
+                                config, outHandle, output);
 
 	return (PLUGIN_HANDLE)pivotFilter;
 }
@@ -101,7 +101,10 @@ void plugin_ingest(PLUGIN_HANDLE handle,
 void plugin_reconfigure(PLUGIN_HANDLE handle, const std::string& newConfig)
 {
     IEC104PivotFilter* pivotFilter = (IEC104PivotFilter*)handle;
-    pivotFilter->reconfigure(newConfig);
+
+    ConfigCategory config("iec104pivot", newConfig);
+
+    pivotFilter->reconfigure(&config);
 }
 
 /**

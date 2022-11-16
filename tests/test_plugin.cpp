@@ -23,6 +23,47 @@ extern "C" {
                    READINGSET *readingSet);
 };
 
+static string exchanged_data = QUOTE({
+        "exchanged_data" : {
+            "description" : "exchanged data list",
+            "type" : "json",
+            "displayName" : "Exchanged data list",
+            "order" : "1",
+            "default":  {
+                "exchanged_data" : {
+                    "name" : "iec104pivot",
+                    "version" : "1.0",
+                    "datapoints":[
+                        {
+                            "label":"TS1",
+                            "pivot_id":"ID-45-672",
+                            "pivot_type":"SpsTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-672",
+                                  "typeid":"M_SP_NA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"TM1",
+                            "pivot_id":"ID-45-984",
+                            "pivot_type":"MvTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-984",
+                                  "typeid":"M_ME_NA_1"
+                               }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    });
+
 static int outputHandlerCalled = 0;
 
 template <class T>
@@ -77,10 +118,33 @@ TEST(PivotIEC104Plugin, PluginInfo)
 
 static void testOutputStream(OUTPUT_HANDLE * handle, READINGSET* readingSet)
 {
+    const std::vector<Reading*> readings = readingSet->getAllReadings();
+
+    for (Reading* reading : readings) {
+        printf("output: Reading: %s\n", reading->getAssetName().c_str());
+
+        std::vector<Datapoint*>& datapoints = reading->getReadingData();
+
+        for (Datapoint* dp : datapoints) {
+            printf("output:   datapoint: %s -> %s\n", dp->getName().c_str(), dp->getData().toString().c_str());
+        }
+    }
+
     outputHandlerCalled++;
 }
 
 TEST(PivotIEC104Plugin, PluginInitShutdown)
+{
+    ConfigCategory config("iec104pivot", exchanged_data);
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, PluginInitNoConfig)
 {
     PLUGIN_HANDLE handle = plugin_init(NULL, NULL, testOutputStream);
 
@@ -94,13 +158,15 @@ TEST(PivotIEC104Pluging, Plugin_ingest)
 {
     outputHandlerCalled = 0;
 
-    auto* dataobjects = new vector<Datapoint*>;
+    vector<Datapoint*> dataobjects;
 
-    dataobjects->push_back(createDataObject("M_SP_NA_1", 45, 672, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false));
-    dataobjects->push_back(createDataObject("M_SP_NA_1", 45, 673, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
-    dataobjects->push_back(createDataObject("M_SP_NA_1", 45, 947, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 672, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 673, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 947, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
 
-    Reading* reading = new Reading(std::string("TS1"), *dataobjects);
+    Reading* reading = new Reading(std::string("TS1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
 
     vector<Reading*> readings;
 
@@ -110,15 +176,19 @@ TEST(PivotIEC104Pluging, Plugin_ingest)
 
     readingSet.append(readings);
 
-    PLUGIN_HANDLE handle = plugin_init(NULL, NULL, testOutputStream);
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
 
     ASSERT_TRUE(handle != nullptr);
 
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-
-    delete dataobjects;
 
     plugin_shutdown(handle);
 }
