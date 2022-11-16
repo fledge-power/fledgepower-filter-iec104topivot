@@ -1,4 +1,5 @@
 #include "iec104_pivot_filter.hpp"
+#include "iec104_pivot_object.hpp"
 
 #include <config_category.h>
 #include <logger.h>
@@ -20,117 +21,6 @@ IEC104PivotFilter::IEC104PivotFilter(const std::string& filterName,
 IEC104PivotFilter::~IEC104PivotFilter()
 {
 
-}
-
-Datapoint*
-IEC104PivotFilter::createDp(string name)
-{
-    vector<Datapoint*>* datapoints = new vector<Datapoint*>;
-
-    DatapointValue dpv(datapoints, true);
-
-    Datapoint* dp = new Datapoint(name, dpv);
-
-    return dp;
-}
-
-template <class T>
-Datapoint*
-IEC104PivotFilter::createDpWithValue(string name, const T value)
-{
-    DatapointValue dpv(value);
-
-    Datapoint* dp = new Datapoint(name, dpv);
-
-    return dp;
-}
-
-Datapoint*
-IEC104PivotFilter::addElement(Datapoint* dp, string elementPath)
-{
-    DatapointValue& dpv = dp->getData();
-
-    std::vector<Datapoint*>* subDatapoints = dpv.getDpVec();
-
-    Datapoint* element = createDp(elementPath);
-
-    if (element) {
-       subDatapoints->push_back(element);
-    }
-
-    return element;
-}
-
-void
-IEC104PivotFilter::addQuality(Datapoint* dp, bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
-{
-    Datapoint* q = addElement(dp, "q");
-
-    if (nt || ov) {
-        Datapoint* detailQuality = addElement(q, "DetailQuality");
-
-        if (nt)
-            addElementWithValue(detailQuality, "oldData", (long)1);
-
-        if (ov)
-            addElementWithValue(detailQuality, "overflow", (long)1);
-    }
-    
-    if (sb) {
-        addElementWithValue(q, "Source", "substituted");
-    }
-    else {
-        addElementWithValue(q, "Source", "process");
-    }
-
-    if (bl) {
-        addElementWithValue(q, "operatorBlocked", (long)1);
-    }
-
-    if (test) {
-        addElementWithValue(q, "test", (long)1);
-    }
-
-    if (iv) {
-        addElementWithValue(q, "Validity", "invalid");
-    }
-    else {
-        addElementWithValue(q, "Validity", "Good");
-    }
-}
-
-void
-IEC104PivotFilter::addTimestamp(Datapoint* dp, long timestamp, bool iv, bool su, bool sub)
-{
-    Datapoint* t = addElement(dp, "t");
-
-    float fractionOfSecond = (float)(timestamp % 1000)/1000.f;
-
-    addElementWithValue(t, "SecondSinceEpoch", timestamp/1000);
-    addElementWithValue(t, "FractionOfSecond", fractionOfSecond);
-
-    Datapoint* timeQuality = addElement(t, "TimeQuality");
-
-    addElementWithValue(timeQuality, "clockFailure", (long)(iv ? 1 : 0));
-    addElementWithValue(timeQuality, "leapSecondKnown", (long)1);
-    addElementWithValue(timeQuality, "timeAccuracy", (long)10);
-}
-
-template <class T>
-Datapoint*
-IEC104PivotFilter::addElementWithValue(Datapoint* dp, string elementPath, const T value)
-{
-    DatapointValue& dpv = dp->getData();
-
-    std::vector<Datapoint*>* subDatapoints = dpv.getDpVec();
-
-    Datapoint* element = createDpWithValue(elementPath, value);
-
-    if (element) {
-       subDatapoints->push_back(element);
-    }
-
-    return element;
 }
 
 Datapoint*
@@ -172,6 +62,9 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
         bool doTsIv = false;
         bool doTsSu = false;
         bool doTsSub = false;
+
+        bool hasDoTest = false;
+        bool doTest = false;
 
         Datapoint* doValue = nullptr;
 
@@ -264,6 +157,14 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                
                 hasDoTsSub = true;
             }
+            else if ((hasDoTest == false) && (dp->getName() == "do_test")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (dp->getData().toInt() > 0)
+                        doTest = true;
+                }
+               
+                hasDoTest= true;
+            }
         }
 
         //NOTE: when doValue is missing it could be an ACK!
@@ -272,20 +173,11 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
 
             if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
             {
-                Datapoint* pivotts = createDp("PIVOTTS");
+                PivotObject pivot("PIVOTTS", "GTIS", "SpsTyp");
 
-                Datapoint* gtis = addElement(pivotts, "GTIS");
-
-                addElementWithValue(gtis, "Identifier", exchangeConfig->getPivotId());
-
-                Datapoint* gtis_Cause = addElement(gtis, "Cause");
-
-                Datapoint* gtis_Cause_stVal = addElementWithValue(gtis_Cause, "stVal", (long)doCot);
-
-                Datapoint* gtis_ComingFrom = addElementWithValue(gtis, "ComingFrom", "IEC104");
-
-                Datapoint* gtis_spsTyp = addElement(gtis, "SpsTyp");
-
+                pivot.setIdentifier(exchangeConfig->getPivotId());
+                pivot.setCause(doCot);
+                
                 if (doValue) {
                     bool spsValue = false;
 
@@ -295,18 +187,39 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                         }
                     }
 
-                    Datapoint* gtis_spsType_stVal = addElementWithValue(gtis_spsTyp, "stVal", (long)(spsValue ? 1 : 0));
+                    pivot.setStVal(spsValue);
                 }
 
-                addQuality(gtis_spsTyp, doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, false);
+                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    addTimestamp(gtis_spsTyp, doTs, doTsIv, doTsSu, doTsSub);
-                }
+                if (hasDoTs)
+                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
                 
-                convertedDatapoint = pivotts;
+                convertedDatapoint = pivot.toDatapoint();
             }
+            else if (doType == "M_ME_NA_1")
+            {
+                PivotObject pivot("PIVOTTM", "GTIM", "MvTyp");
 
+                pivot.setIdentifier(exchangeConfig->getPivotId());
+                pivot.setCause(doCot);
+
+                if (doValue) {
+                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                        pivot.setMagI(doValue->getData().toInt());
+                    }
+                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                        pivot.setMagF(doValue->getData().toDouble());
+                    }
+                }
+
+                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+                if (hasDoTs)
+                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+
+                convertedDatapoint = pivot.toDatapoint();
+            }
 
         }
     }
