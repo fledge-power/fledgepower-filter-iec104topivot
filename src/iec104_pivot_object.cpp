@@ -89,7 +89,15 @@ PivotObject::setCause(int cause)
 void
 PivotObject::setStVal(bool value)
 {
+    printf("setStVal(%i)\n", value);
     addElementWithValue(m_cdc, "stVal", (long)(value ? 1 : 0));
+}
+
+void
+PivotObject::setStValStr(const std::string& value)
+{
+    printf("setStVal(%s)\n", value.c_str());
+    addElementWithValue(m_cdc, "stVal", value);
 }
 
 void

@@ -19,7 +19,7 @@ using namespace rapidjson;
 
 extern "C" {
 
-#define PLUGIN_NAME "iec104_to_pivot"
+#define PLUGIN_NAME "iec104_pivot_filter"
 #define VERSION "1.0.0"
 
 /**
@@ -27,18 +27,73 @@ extern "C" {
  */
 static const char *default_config = QUOTE({
 			"plugin" : {
-				"description" : "IEC 104 Server",
+				"description" : "IEC 104 to pivot filter plugin",
 				"type" : "string",
 				"default" : PLUGIN_NAME,
 				"readonly" : "true"
 			},
-			"name" : {
-				"description" : "The IEC 104 Server name to advertise",
-				"type" : "string",
-				"default" : "Fledge IEC 104",
-				"order" : "1",
-				"displayName" : "Server Name"
-			}
+            "exchanged_data": {
+                    "description" : "exchanged data list",
+                    "type" : "string",
+                    "displayName" : "Exchanged data list",
+                    "order" : "1",
+                    "default" : QUOTE({
+                                "exchanged_data" : {
+                                    "name" : "iec104pivot",
+                                    "version" : "1.0",
+                                    "datapoints":[
+                                        {
+                                            "label":"TS1",
+                                            "pivot_id":"ID-45-672",
+                                            "pivot_type":"SpsTyp",
+                                            "protocols":[
+                                               {
+                                                  "name":"iec104",
+                                                  "address":"45-672",
+                                                  "typeid":"M_SP_NA_1"
+                                               }
+                                            ]
+                                        },
+                                        {
+                                            "label":"TS2",
+                                            "pivot_id":"ID-45-872",
+                                            "pivot_type":"SpsTyp",
+                                            "protocols":[
+                                               {
+                                                  "name":"iec104",
+                                                  "address":"45-872",
+                                                  "typeid":"M_SP_TB_1"
+                                               }
+                                            ]
+                                        },
+                                        {
+                                            "label":"TS3",
+                                            "pivot_id":"ID-45-890",
+                                            "pivot_type":"DpsTyp",
+                                            "protocols":[
+                                               {
+                                                  "name":"iec104",
+                                                  "address":"45-890",
+                                                  "typeid":"M_DP_TB_1"
+                                               }
+                                            ]
+                                        },
+                                        {
+                                            "label":"TM1",
+                                            "pivot_id":"ID-45-984",
+                                            "pivot_type":"MvTyp",
+                                            "protocols":[
+                                               {
+                                                  "name":"iec104",
+                                                  "address":"45-984",
+                                                  "typeid":"M_ME_NA_1"
+                                               }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            })
+            }
 		});
 
 

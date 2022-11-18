@@ -16,6 +16,7 @@ public:
     void setCause(int cause);
 
     void setStVal(bool value);
+    void setStValStr(const std::string& value);
 
     void setMagF(float value);
     void setMagI(int value);

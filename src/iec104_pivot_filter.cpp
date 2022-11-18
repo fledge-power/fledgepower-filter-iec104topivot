@@ -197,9 +197,89 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
                 
                 convertedDatapoint = pivot.toDatapoint();
             }
-            else if (doType == "M_ME_NA_1")
+            else if (doType == "M_DP_NA_1" || doType == "M_DP_TB_1") 
+            {
+                PivotObject pivot("PIVOTTS", "GTIS", "DpsTyp");
+
+                pivot.setIdentifier(exchangeConfig->getPivotId());
+                pivot.setCause(doCot);
+                
+                if (doValue) {
+                     
+                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                        int dpsValue = doValue->getData().toInt();
+
+                        if (dpsValue == 0) {
+                            pivot.setStValStr("intermediate-state");
+                        }
+                        else if (dpsValue == 1) {
+                            pivot.setStValStr("off");
+                        }
+                        else if (dpsValue == 2) {
+                            pivot.setStValStr("on");
+                        }
+                        else {
+                            pivot.setStValStr("bad-state");
+                        }
+                    }
+                }
+
+                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+                if (hasDoTs)
+                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+                
+                convertedDatapoint = pivot.toDatapoint();
+            }
+            else if (doType == "M_ME_NA_1" || doType == "M_ME_TD_1") /* normalized measured value */
             {
                 PivotObject pivot("PIVOTTM", "GTIM", "MvTyp");
+
+                pivot.setIdentifier(exchangeConfig->getPivotId());
+                pivot.setCause(doCot);
+
+                if (doValue) {
+                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                        pivot.setMagI(doValue->getData().toInt());
+                    }
+                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                        pivot.setMagF(doValue->getData().toDouble());
+                    }
+                }
+
+                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+                if (hasDoTs)
+                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+
+                convertedDatapoint = pivot.toDatapoint();
+            }
+            else if (doType == "M_ME_NB_1" || doType == "M_ME_TE_1") /* scaled measured value */
+            {
+            PivotObject pivot("PIVOTTM", "GTIM", "MvTyp");
+
+                pivot.setIdentifier(exchangeConfig->getPivotId());
+                pivot.setCause(doCot);
+
+                if (doValue) {
+                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                        pivot.setMagI(doValue->getData().toInt());
+                    }
+                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                        pivot.setMagF(doValue->getData().toDouble());
+                    }
+                }
+
+                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+                if (hasDoTs)
+                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+
+                convertedDatapoint = pivot.toDatapoint();
+            }
+            else if (doType == "M_ME_NC_1" || doType == "M_ME_TF_1") /* short (float) measured value */
+            {
+            PivotObject pivot("PIVOTTM", "GTIM", "MvTyp");
 
                 pivot.setIdentifier(exchangeConfig->getPivotId());
                 pivot.setCause(doCot);

@@ -59,6 +59,18 @@ static string exchanged_data = QUOTE({
                             ]
                         },
                         {
+                            "label":"TS3",
+                            "pivot_id":"ID-45-890",
+                            "pivot_type":"DpsTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-890",
+                                  "typeid":"M_DP_TB_1"
+                               }
+                            ]
+                        },
+                        {
                             "label":"TM1",
                             "pivot_id":"ID-45-984",
                             "pivot_type":"MvTyp",
@@ -214,6 +226,43 @@ TEST(PivotIEC104Pluging, M_SP_TB_1)
     dataobjects.push_back(createDataObject("M_SP_TB_1", 45, 872, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
 
     Reading* reading = new Reading(std::string("TS2"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Pluging, M_DP_TB_1)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
     reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
 
