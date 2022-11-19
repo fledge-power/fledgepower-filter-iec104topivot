@@ -26,7 +26,7 @@ extern "C" {
 static string exchanged_data = QUOTE({
         "exchanged_data" : {
             "description" : "exchanged data list",
-            "type" : "json",
+            "type" : "JSON",
             "displayName" : "Exchanged data list",
             "order" : "1",
             "default":  {

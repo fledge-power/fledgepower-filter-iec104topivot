@@ -24,7 +24,7 @@ IEC104PivotFilter::~IEC104PivotFilter()
 }
 
 Datapoint*
-IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
+IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
 {
     Datapoint* convertedDatapoint = nullptr;
 
@@ -310,9 +310,21 @@ IEC104PivotFilter::convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* e
     return convertedDatapoint;
 }
 
+Datapoint*
+IEC104PivotFilter::convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
+{
+    //TODO implement
+    Logger::getLogger()->error("Conversion from pivot to IEC104 not implemented");
+
+    return nullptr;
+}
+
 void
 IEC104PivotFilter::ingest(READINGSET* readingSet)
 {
+    Logger::getLogger()->info("ingest called");
+
+
     /* apply transformation */
     std::vector<Reading*>* readings = readingSet->getAllReadingsPtr();
 
@@ -322,7 +334,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         auto exchangeData = m_config.getExchangeDefinitions();
 
         if (exchangeData.find(assetName) != exchangeData.end()) {
-            printf("Found asset (%s) in exchanged data\n", assetName.c_str());
+            Logger::getLogger()->info("Found asset (%s) in exchanged data", assetName.c_str());
 
             IEC104PivotDataPoint* exchangeConfig = exchangeData[assetName];
 
@@ -334,7 +346,14 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
             for (Datapoint* dp : datapoints) {
                 if (dp->getName() == "data_object") {
-                    Datapoint* convertedDp = convertDatapoint(dp, exchangeConfig);
+                    Datapoint* convertedDp = convertDatapointToPivot(dp, exchangeConfig);
+
+                    if (convertedDp) {
+                        convertedDatapoints.push_back(convertedDp);
+                    }
+                }
+                else if (dp->getName() == "PIVOTTS" || dp->getName() == "PIVOTTM" || dp->getName() == "PIVOTTC") {
+                    Datapoint* convertedDp = convertDatapointToIEC104(dp, exchangeConfig);
 
                     if (convertedDp) {
                         convertedDatapoints.push_back(convertedDp);
@@ -342,6 +361,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                 }
                 else {
                     printf("ERROR: (%s) not a data_object\n", dp->getName().c_str());
+                    Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
                 }
             }
 
@@ -355,12 +375,15 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
         else {
             printf("Asset (%s) not found in exchanged data\n", assetName.c_str());
+            Logger::getLogger()->error("Asset (%s) not found in exchanged data", assetName.c_str());
         }
     }
 
     if (readings->empty() == false) {
 
         printf("Send %lu converted readings\n", readings->size());
+
+        Logger::getLogger()->info("Send %lu converted readings", readings->size());
 
         m_output(m_outHandle, readingSet);
     }

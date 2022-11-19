@@ -35,9 +35,9 @@ private:
     template <class T>
     Datapoint* createDpWithValue(string name, const T value);
 
-    Datapoint* convertDatapoint(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
 
-
+    Datapoint* convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
 
     OUTPUT_HANDLE* m_outHandle;
     OUTPUT_STREAM m_output;
