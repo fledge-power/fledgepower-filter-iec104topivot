@@ -42,7 +42,7 @@ static const char *default_config = QUOTE({
 			},
             "exchanged_data": {
                     "description" : "exchanged data list",
-                    "type" : "string",
+                    "type" : "JSON",
                     "displayName" : "Exchanged data list",
                     "order" : "1",
                     "default" : QUOTE({
