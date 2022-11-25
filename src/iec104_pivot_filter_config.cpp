@@ -1,3 +1,14 @@
+/*
+ * FledgePower IEC 104 <-> pivot filter plugin.
+ *
+ * Copyright (c) 2022, RTE (https://www.rte-france.com)
+ *
+ * Released under the Apache 2.0 Licence
+ *
+ * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
+ * 
+ */
+
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <logger.h>

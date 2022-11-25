@@ -1,6 +1,14 @@
 /*
- * FledgePower IEC 104 to pivot filter pluging
+ * FledgePower IEC 104 <-> pivot filter plugin.
+ *
+ * Copyright (c) 2022, RTE (https://www.rte-france.com)
+ *
+ * Released under the Apache 2.0 Licence
+ *
+ * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
+ * 
  */
+
 #include <plugin_api.h>
 #include <stdio.h>
 #include <stdlib.h>

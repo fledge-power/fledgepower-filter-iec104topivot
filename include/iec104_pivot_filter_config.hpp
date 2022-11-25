@@ -1,3 +1,14 @@
+/*
+ * FledgePower IEC 104 <-> pivot filter plugin.
+ *
+ * Copyright (c) 2022, RTE (https://www.rte-france.com)
+ *
+ * Released under the Apache 2.0 Licence
+ *
+ * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
+ * 
+ */
+
 #ifndef PIVOT_IEC104_CONFIG_H
 #define PIVOT_IEC104_CONFIG_H
 
@@ -12,7 +23,12 @@ public:
     IEC104PivotDataPoint(string label, string pivotId, string pivotType, string typeIdString, int ca, int ioa, string altMappingRule);
     ~IEC104PivotDataPoint();
 
+    std::string& getLabel() {return m_label;};
     std::string& getPivotId() {return m_pivotId;};
+    std::string& getPivotType() {return m_pivotType;};
+    std::string& getTypeId() {return m_typeIdStr;};
+    int getCA() {return m_ca;};
+    int getIOA() {return m_ioa;};
 
 private:
     std::string m_label;

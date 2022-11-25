@@ -6,6 +6,7 @@
 #include <string.h>
 #include <string>
 #include <rapidjson/document.h>
+#include "iec104_pivot_object.hpp"
 
 using namespace std;
 using namespace rapidjson;
@@ -89,6 +90,7 @@ static string exchanged_data = QUOTE({
     });
 
 static int outputHandlerCalled = 0;
+static Reading* lastReading = nullptr;
 
 template <class T>
 static Datapoint* createDatapoint(const std::string& dataname,
@@ -135,7 +137,7 @@ static Datapoint* createDataObject(const char* type, int ca, int ioa, int cot,
 TEST(PivotIEC104Plugin, PluginInfo)
 {
 	PLUGIN_INFORMATION *info = plugin_info();
-	ASSERT_STREQ(info->name, "iec104_to_pivot");
+	ASSERT_STREQ(info->name, "iec104_pivot_filter");
 	ASSERT_EQ(info->type, PLUGIN_TYPE_FILTER);
     ASSERT_STREQ(info->version, "1.0.0");
 }
@@ -152,6 +154,13 @@ static void testOutputStream(OUTPUT_HANDLE * handle, READINGSET* readingSet)
         for (Datapoint* dp : datapoints) {
             printf("output:   datapoint: %s -> %s\n", dp->getName().c_str(), dp->getData().toString().c_str());
         }
+
+        if (lastReading != nullptr) {
+            delete lastReading;
+            lastReading = nullptr;
+        }
+
+        lastReading = new Reading(*reading);
     }
 
     outputHandlerCalled++;
@@ -178,7 +187,7 @@ TEST(PivotIEC104Plugin, PluginInitNoConfig)
 }
 
 
-TEST(PivotIEC104Pluging, Plugin_ingest)
+TEST(PivotIEC104Plugin, Plugin_ingest)
 {
     outputHandlerCalled = 0;
 
@@ -217,7 +226,7 @@ TEST(PivotIEC104Pluging, Plugin_ingest)
     plugin_shutdown(handle);
 }
 
-TEST(PivotIEC104Pluging, M_SP_TB_1)
+TEST(PivotIEC104Plugin, M_SP_TB_1)
 {
     outputHandlerCalled = 0;
 
@@ -254,7 +263,7 @@ TEST(PivotIEC104Pluging, M_SP_TB_1)
     plugin_shutdown(handle);
 }
 
-TEST(PivotIEC104Pluging, M_DP_TB_1)
+TEST(PivotIEC104Plugin, M_DP_TB_1)
 {
     outputHandlerCalled = 0;
 
@@ -287,6 +296,146 @@ TEST(PivotIEC104Pluging, M_DP_TB_1)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, TypeNotMatching)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_SP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(0, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_NA_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, spsTyp);
+
+    spsTyp->setIdentifier("ID-45-672");
+    spsTyp->setCause(3); /* COT = spont */
+    spsTyp->setStVal(true);
+    spsTyp->addQuality(false, false, false, false, false, false);
+
+    Datapoint* dp = spsTyp->toDatapoint();
+
+    delete spsTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TS1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_TB_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, spsTyp);
+
+    spsTyp->setIdentifier("ID-45-872");
+    spsTyp->setCause(3); /* COT = spont */
+    spsTyp->setStVal(true);
+    spsTyp->addQuality(true, true, true, false, true, true);
+    spsTyp->addTimestamp(1669123796250, false, false, false);
+
+    Datapoint* dp = spsTyp->toDatapoint();
+
+    delete spsTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TS2"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    lastReading->getReadingData();
 
     plugin_shutdown(handle);
 }
