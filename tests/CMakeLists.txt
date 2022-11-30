@@ -91,5 +91,5 @@ endif()
 target_link_libraries(${PROJECT_NAME} ${GTEST_LIBRARIES} pthread)
 target_link_libraries(${PROJECT_NAME} ${NEEDED_FLEDGE_LIBS})
 target_link_libraries(${PROJECT_NAME}  ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} -L/usr/local/lib -llib60870)
+
 target_link_libraries(${PROJECT_NAME} -lpthread -ldl)
