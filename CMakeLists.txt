@@ -94,8 +94,6 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES} version.h)
 # Add Fledge library names
 target_link_libraries(${PROJECT_NAME} ${NEEDED_FLEDGE_LIBS})
 
-target_link_libraries(${PROJECT_NAME} -L/usr/local/lib -llib60870)
-
 # Add additional libraries
 target_link_libraries(${PROJECT_NAME} -lpthread -ldl)
 
