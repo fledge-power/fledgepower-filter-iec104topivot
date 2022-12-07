@@ -118,6 +118,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
         bool hasComingFrom = false;
 
+        bool hasDoNegative = false;
+        bool doNegative = false;
+
         Datapoint* doValue = nullptr;
 
         for (Datapoint* dp : *datapoints) {
@@ -232,6 +235,14 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                     }
                 }
             }
+            else if ((hasDoNegative == false) && (dp->getName() == "do_negative")) {
+                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (dp->getData().toInt() > 0)
+                        doNegative = true;
+                }
+
+                hasDoNegative = true;
+            }
         }
 
         if (comingFromIec104 == false) {
@@ -240,7 +251,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
         //NOTE: when doValue is missing it could be an ACK!
 
-        if (comingFromIec104 && hasDoType && hasDoCot && doValue) {
+        if (comingFromIec104 && hasDoType && hasDoCot) {
 
             if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
             {
@@ -259,6 +270,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                     }
 
                     pivot.setStVal(spsValue);
+                }
+                else {
+                    pivot.setConfirmation(doNegative);
                 }
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
@@ -301,6 +315,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                         }
                     }
                 }
+                else {
+                    pivot.setConfirmation(doNegative);
+                }
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
@@ -330,6 +347,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                     else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
                         pivot.setMagF(doValue->getData().toDouble());
                     }
+                }
+                else {
+                    pivot.setConfirmation(doNegative);
                 }
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
@@ -361,6 +381,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                         pivot.setMagF(doValue->getData().toDouble());
                     }
                 }
+                else {
+                    pivot.setConfirmation(doNegative);
+                }
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
@@ -390,6 +413,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                     else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
                         pivot.setMagF(doValue->getData().toDouble());
                     }
+                }
+                else {
+                    pivot.setConfirmation(doNegative);
                 }
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);

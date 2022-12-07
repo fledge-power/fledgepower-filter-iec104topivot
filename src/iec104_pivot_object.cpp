@@ -302,18 +302,6 @@ PivotObject::handleDetailQuality(Datapoint* detailQuality)
                 else
                     m_overflow = false;
             }
-            else if (child->getName() == "operatorBlocked") {
-                if (getValueInt(child) > 0)
-                    m_operatorBlocked = true;
-                else
-                    m_operatorBlocked = false;
-            }
-            else if (child->getName() == "test") {
-                if (getValueInt(child) > 0)
-                    m_test = true;
-                else
-                    m_test = false;
-            }
         }
     }
 }
@@ -360,6 +348,18 @@ PivotObject::handleQuality(Datapoint* q)
             }
             else if (child->getName() == "DetailQuality") {
                 handleDetailQuality(child);
+            }
+            else if (child->getName() == "operatorBlocked") {
+                if (getValueInt(child) > 0)
+                    m_operatorBlocked = true;
+                else
+                    m_operatorBlocked = false;
+            }
+            else if (child->getName() == "test") {
+                if (getValueInt(child) > 0)
+                    m_test = true;
+                else
+                    m_test = false;
             }
         }
     }
@@ -506,7 +506,7 @@ PivotObject::PivotObject(const string& pivotLN, const string& valueType)
 
     m_ln = addElement(m_dp, pivotLN);
 
-    addElementWithValue(m_ln, "ComingFrom", "IEC104");
+    addElementWithValue(m_ln, "ComingFrom", "iec104");
 
     m_cdc = addElement(m_ln, valueType);
 }
@@ -556,6 +556,16 @@ PivotObject::setMagI(int value)
     Datapoint* mag = addElement(m_cdc, "mag");
 
     addElementWithValue(mag, "i", (long)value);
+}
+
+void
+PivotObject::setConfirmation(bool value)
+{
+    Datapoint* confirmation = addElement(m_ln, "Confirmation");
+
+    if (confirmation) {
+        addElementWithValue(confirmation, "stVal", (long)(value ? 1 : 0));
+    }
 }
 
 void
@@ -635,6 +645,7 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
         addElementWithValue(dataObject, "do_ca", (long)(exchangeConfig->getCA()));
         addElementWithValue(dataObject, "do_ioa", (long)(exchangeConfig->getIOA()));
         addElementWithValue(dataObject, "do_cot", (long)getCause());
+
         addElementWithValue(dataObject, "do_test", (long)(Test() ? 1 : 0));
 
         addElementWithValue(dataObject, "do_quality_iv", (long)(getValidity() == Validity::GOOD ? 0 : 1));

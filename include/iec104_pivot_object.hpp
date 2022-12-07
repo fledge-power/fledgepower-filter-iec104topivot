@@ -102,6 +102,8 @@ public:
     void setMagF(float value);
     void setMagI(int value);
 
+    void setConfirmation(bool value);
+
     void addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test);
     void addTimestamp(long ts, bool iv, bool su, bool sub);
 
