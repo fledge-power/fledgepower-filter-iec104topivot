@@ -134,6 +134,44 @@ static Datapoint* createDataObject(const char* type, int ca, int ioa, int cot,
     return dp;
 }
 
+template <class T>
+static Datapoint* createDataObjectWithSource(const char* type, int ca, int ioa, int cot,
+    const T value, bool iv, bool bl, bool ov, bool sb, bool nt, long msTime, bool isInvalid, bool isSummerTime, bool isSubst, const char* sourceValue)
+{
+    auto* datapoints = new vector<Datapoint*>;
+
+    datapoints->push_back(createDatapoint("do_type", type));
+    datapoints->push_back(createDatapoint("do_ca", (int64_t)ca));
+    datapoints->push_back(createDatapoint("do_oa", (int64_t)0));
+    datapoints->push_back(createDatapoint("do_cot", (int64_t)cot));
+    datapoints->push_back(createDatapoint("do_test", (int64_t)0));
+    datapoints->push_back(createDatapoint("do_negative", (int64_t)0));
+    datapoints->push_back(createDatapoint("do_ioa", (int64_t)ioa));
+    datapoints->push_back(createDatapoint("do_value", value));
+    datapoints->push_back(createDatapoint("do_quality_iv", (int64_t)iv));
+    datapoints->push_back(createDatapoint("do_quality_bl", (int64_t)bl));
+    datapoints->push_back(createDatapoint("do_quality_ov", (int64_t)ov));
+    datapoints->push_back(createDatapoint("do_quality_sb", (int64_t)sb));
+    datapoints->push_back(createDatapoint("do_quality_nt", (int64_t)nt));
+
+    if (msTime != 0) {
+         datapoints->push_back(createDatapoint("do_ts", msTime));
+         datapoints->push_back(createDatapoint("do_ts_iv", isInvalid ? 1L : 0L));
+         datapoints->push_back(createDatapoint("do_ts_su", isSummerTime ? 1L : 0L));
+         datapoints->push_back(createDatapoint("do_ts_sub", isSubst ? 1L : 0L));
+    }
+
+    if (sourceValue) {
+        datapoints->push_back(createDatapoint("do_comingfrom", sourceValue));
+    }
+
+    DatapointValue dpv(datapoints, true);
+
+    Datapoint* dp = new Datapoint("data_object", dpv);
+
+    return dp;
+}
+
 TEST(PivotIEC104Plugin, PluginInfo)
 {
 	PLUGIN_INFORMATION *info = plugin_info();
@@ -300,6 +338,43 @@ TEST(PivotIEC104Plugin, M_DP_TB_1)
     plugin_shutdown(handle);
 }
 
+TEST(PivotIEC104Plugin, M_DP_NA_1)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 0, true, false, false));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
 TEST(PivotIEC104Plugin, TypeNotMatching)
 {
     outputHandlerCalled = 0;
@@ -333,6 +408,81 @@ TEST(PivotIEC104Plugin, TypeNotMatching)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(0, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, ToPivotSourceInvalid)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObjectWithSource("M_DP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false, "iec103"));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    // expect the output handler is not called because of the wrong source
+    ASSERT_EQ(0, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, ToPivotSourceValid)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObjectWithSource("M_DP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false, "iec104"));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
 
     plugin_shutdown(handle);
 }

@@ -114,6 +114,9 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
         bool hasDoTest = false;
         bool doTest = false;
+        bool comingFromIec104 = true;
+
+        bool hasComingFrom = false;
 
         Datapoint* doValue = nullptr;
 
@@ -220,11 +223,24 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
                
                 hasDoTest= true;
             }
+            else if ((hasComingFrom == false) && (dp->getName() == "do_comingfrom")) {
+                if (dp->getData().getType() == DatapointValue::T_STRING) {
+                    string comingFromValue = dp->getData().toStringValue();
+
+                    if (comingFromValue != "iec104") {
+                        comingFromIec104 = false;
+                    }
+                }
+            }
+        }
+
+        if (comingFromIec104 == false) {
+            Logger::getLogger()->warn("data_object for %s is not from IEC 104 plugin -> ignore", exchangeConfig->getLabel().c_str());
         }
 
         //NOTE: when doValue is missing it could be an ACK!
 
-        if (hasDoType && hasDoCot && doValue) {
+        if (comingFromIec104 && hasDoType && hasDoCot && doValue) {
 
             if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
             {
