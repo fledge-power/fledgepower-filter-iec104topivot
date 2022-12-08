@@ -590,6 +590,88 @@ TEST(PivotIEC104Plugin, M_DP_TB_1_time_substituted)
     plugin_shutdown(handle);
 }
 
+TEST(PivotIEC104Plugin, M_DP_TB_1_time_invalid)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, false));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIS");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* spsTyp = getChild(gtis, "DpsTyp");
+    ASSERT_NE(nullptr, spsTyp);
+    Datapoint* stVal = getChild(spsTyp, "stVal");
+    ASSERT_NE(nullptr, stVal);
+    ASSERT_TRUE(isValueStr(stVal));
+    ASSERT_EQ("on", getValueStr(stVal));
+
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(3, getValueInt(causeStVal));
+
+    Datapoint* t = getChild(spsTyp, "t");
+    ASSERT_NE(nullptr, t);
+
+    Datapoint* t_SecondsSinceEpoch = getChild(t, "SecondSinceEpoch");
+    ASSERT_NE(nullptr, t_SecondsSinceEpoch);
+    ASSERT_TRUE(isValueInt(t_SecondsSinceEpoch));
+    long secondSinceEpochValue = getValueInt(t_SecondsSinceEpoch);
+
+    ASSERT_NEAR(1668631513, secondSinceEpochValue, 1);
+
+    Datapoint* tmOrg = getChild(gtis, "TmOrg");
+    ASSERT_NE(nullptr, tmOrg);
+    Datapoint* tmOrg_stVal = getChild(tmOrg, "stVal");
+    ASSERT_NE(nullptr, tmOrg_stVal);
+    ASSERT_TRUE(isValueStr(tmOrg_stVal));
+    ASSERT_EQ("genuine", getValueStr(tmOrg_stVal));
+
+    Datapoint* tmValidity = getChild(gtis, "TmValidity");
+    ASSERT_NE(nullptr, tmValidity);
+
+    plugin_shutdown(handle);
+}
+
 TEST(PivotIEC104Plugin, M_DP_NA_1)
 {
     outputHandlerCalled = 0;
@@ -1247,7 +1329,6 @@ TEST(PivotIEC104Plugin, SpsTyp_withoutTimestamp_to_M_SP_TB_1)
     spsTyp->setCause(3); /* COT = spont */
     spsTyp->setStVal(false);
     spsTyp->addQuality(true, true, true, false, true, true);
-    //spsTyp->addTimestamp(1669123796250, false, false, false);
 
     Datapoint* dp = spsTyp->toDatapoint();
 
@@ -1354,6 +1435,93 @@ TEST(PivotIEC104Plugin, SpsTyp_withoutTimestamp_to_M_SP_TB_1)
     ASSERT_NE(nullptr, doTsSub);
     ASSERT_TRUE(isValueInt(doTsSub));
     ASSERT_EQ(1, getValueInt(doTsSub));
+
+    Datapoint* doTsIv = getChild(dataobject, "do_ts_iv");
+    ASSERT_EQ(nullptr, doTsIv);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_TB_1_timeInvalid)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, spsTyp);
+
+    spsTyp->setIdentifier("ID-45-872");
+    spsTyp->setCause(3); /* COT = spont */
+    spsTyp->setStVal(false);
+    spsTyp->addQuality(true, true, true, false, true, true);
+    spsTyp->addTimestamp(1669123796250, false, false, false);
+    spsTyp->addTmValidity(true);
+
+    Datapoint* dp = spsTyp->toDatapoint();
+
+    delete spsTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TS2"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_SP_TB_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(872, getValueInt(doIoa));
+
+    Datapoint* doTs = getChild(dataobject, "do_ts");
+    ASSERT_NE(nullptr, doTs);
+    ASSERT_TRUE(isValueInt(doTs));
+    ASSERT_EQ(1669123796250, getValueInt(doTs));
+
+    Datapoint* doTsSub = getChild(dataobject, "do_ts_sub");
+    ASSERT_EQ(nullptr, doTsSub);
+
+    Datapoint* doTsIv = getChild(dataobject, "do_ts_iv");
+    ASSERT_NE(nullptr, doTsIv);
+    ASSERT_TRUE(isValueInt(doTsIv));
+    ASSERT_EQ(1, getValueInt(doTsIv));
 
     plugin_shutdown(handle);
 }

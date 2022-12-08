@@ -67,6 +67,10 @@ appendTimestamp(PivotObject& pivot, bool hasDoTs, long doTs, bool doTsIv, bool d
     if (hasDoTs) {
         pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
         pivot.addTmOrg(doTsSub);
+
+        if (doTsIv) {
+            pivot.addTmValidity(true);
+        }
     }
     else {
         doTs = (long)PivotTimestamp::GetCurrentTimeInMs();
@@ -126,9 +130,8 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
     Datapoint* doValue = nullptr;
 
-    for (Datapoint* dp : *datapoints) {
-        printf("DP name: %s value: %s\n", dp->getName().c_str(), dp->getData().toString().c_str());
-
+    for (Datapoint* dp : *datapoints)
+    {
         if ((hasDoType == false) && (dp->getName() == "do_type")) {
             if (dp->getData().getType() == DatapointValue::T_STRING) {
                 doType = dp->getData().toStringValue();
@@ -396,9 +399,6 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
         }
 
     }
-    else {
-        printf("element is missing\n");
-    }
 
     return convertedDatapoint;
 }
@@ -415,7 +415,7 @@ IEC104PivotFilter::convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotData
     }
     catch (PivotObjectException& e)
     {
-        printf("Failed to convert pivot object: %s\n", e.getContext().c_str());
+        Logger::getLogger()->error("Failed to convert pivot object: %s", e.getContext().c_str());
     }
 
     return convertedDatapoint;
@@ -437,9 +437,8 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
         auto exchangeData = m_config.getExchangeDefinitions();
 
-        if (exchangeData.find(assetName) != exchangeData.end()) {
-            Logger::getLogger()->info("Found asset (%s) in exchanged data", assetName.c_str());
-
+        if (exchangeData.find(assetName) != exchangeData.end())
+        {
             IEC104PivotDataPoint* exchangeConfig = exchangeData[assetName];
 
             std::vector<Datapoint*>& datapoints = reading->getReadingData();
@@ -457,21 +456,17 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         convertedDatapoints.push_back(convertedDp);
                     }
                     else {
-                        printf("Failed to convert object\n");
+                        Logger::getLogger()->error("Failed to convert object");
                     }
                 }
                 else if (dp->getName() == "PIVOT") {
                     Datapoint* convertedDp = convertDatapointToIEC104(dp, exchangeConfig);
 
-                    printf("Converted data point to IEC 104\n");
-
                     if (convertedDp) {
-                        printf("  added converted data point\n");
                         convertedDatapoints.push_back(convertedDp);
                     }
                 }
                 else {
-                    printf("ERROR: (%s) not a data_object\n", dp->getName().c_str());
                     Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
                 }
             }
@@ -491,7 +486,6 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
 
         if (reading->getReadingData().size() == 0) {
-            printf("Reading has no elements\n");
             readIt = readings->erase(readIt);
         }
         else {
@@ -499,11 +493,9 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
     }
 
-    if (readings->empty() == false) {
-
-        printf("Send %lu converted readings\n", readings->size());
-
-        Logger::getLogger()->info("Send %lu converted readings", readings->size());
+    if (readings->empty() == false)
+    {
+        Logger::getLogger()->debug("Send %lu converted readings", readings->size());
 
         m_output(m_outHandle, readingSet);
     }
@@ -518,7 +510,6 @@ IEC104PivotFilter::reconfigure(ConfigCategory* config)
     {
         if (config->itemExists("name")) {
             std::string name = config->getValue("name");
-            printf("reconfigure: name = %s\n", name.c_str());
         }
         else
             Logger::getLogger()->error("Missing name in configuration");

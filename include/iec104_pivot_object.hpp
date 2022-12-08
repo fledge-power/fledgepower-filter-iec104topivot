@@ -110,6 +110,7 @@ public:
     void addTimestamp(long ts, bool iv, bool su, bool sub);
 
     void addTmOrg(bool substituted);
+    void addTmValidity(bool invalid);
 
     Datapoint* toDatapoint() {return m_dp;};
 
@@ -135,6 +136,7 @@ public:
     bool Test() {return m_test;};
 
     bool IsTimestampSubstituted() {return m_timestampSubstituted;};
+    bool IsTimestampInvalid() {return m_timestampInvalid;};
 
 private:
 
@@ -169,6 +171,7 @@ private:
     PivotTimestamp* m_timestamp = nullptr;
 
     bool m_timestampSubstituted = false;
+    bool m_timestampInvalid = false;
 
     bool hasIntVal = true;
     long intVal;

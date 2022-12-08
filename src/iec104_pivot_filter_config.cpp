@@ -78,8 +78,8 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
     const Value& datapoints = exchangeData["datapoints"];
 
-    for (const Value& datapoint : datapoints.GetArray()) {
-
+    for (const Value& datapoint : datapoints.GetArray())
+    {
         if (!datapoint.IsObject()) return;
 
         if (!datapoint.HasMember("label") || !datapoint["label"].IsString()) return;
@@ -102,10 +102,8 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
             
             string protocolName = protocol["name"].GetString();
 
-            if (protocolName == PROTOCOL_IEC104) {
-
-                printf("Found iec104 data point config (label: %s)\n", label.c_str());
-
+            if (protocolName == PROTOCOL_IEC104)
+            {
                 if (!protocol.HasMember(JSON_PROT_ADDR) || !protocol[JSON_PROT_ADDR].IsString()) return;
                 if (!protocol.HasMember(JSON_PROT_TYPEID) || !protocol[JSON_PROT_TYPEID].IsString()) return;
 
@@ -118,8 +116,6 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
                     alternateMappingRule = protocol["alternate_mapping_rule"].GetString();
                 }
 
-                printf("  address: %s type: %s\n", address.c_str(), typeIdStr.c_str());
-
                 size_t sepPos = address.find("-");
 
                 if (sepPos != std::string::npos) {
@@ -128,8 +124,6 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
                     int ca = std::stoi(caStr);
                     int ioa = std::stoi(ioaStr);
-
-                    printf("    CA: %i IOA: %i\n", ca, ioa);
 
                     IEC104PivotDataPoint* newDp = new IEC104PivotDataPoint(label, pivotId, pivotType, typeIdStr, ca, ioa, alternateMappingRule);
 

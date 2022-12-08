@@ -447,6 +447,19 @@ PivotObject::PivotObject(Datapoint* pivotData)
             }
         }
 
+        Datapoint* tmValidity  = getChild(m_ln, "TmValidity");
+
+        if (tmValidity) {
+            string tmValidityValue = getChildValueStr(tmValidity, "stVal");
+
+            if (tmValidityValue == "invalid") {
+                m_timestampInvalid = true;
+            }
+            else {
+                m_timestampInvalid = false;
+            }
+        }
+
         Datapoint* cdc = getCdc(m_ln);
 
         if (cdc) {
@@ -643,6 +656,17 @@ PivotObject::addTmOrg(bool substituted)
 }
 
 void
+PivotObject::addTmValidity(bool invalid)
+{
+    Datapoint* tmValidity = addElement(m_ln, "TmValidity");
+
+    if (invalid)
+        addElementWithValue(tmValidity, "stVal", "invalid");
+    else
+        addElementWithValue(tmValidity, "stVal", "good");
+}
+
+void
 PivotObject::addTimestamp(long ts, bool iv, bool su, bool sub)
 {
     Datapoint* t = addElement(m_cdc, "t");
@@ -702,10 +726,15 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
             bool timeInvalid = m_timestamp->ClockFailure() || m_timestamp->ClockNotSynchronized();
 
-            addElementWithValue(dataObject, "do_ts_iv", (long)(timeInvalid ? 1 : 0));
+            if (timeInvalid || IsTimestampInvalid()) {
+                addElementWithValue(dataObject, "do_ts_iv", (long)1);
+            }
+
             //addElementWithValue(dataObject, "do_ts_su", (long)0);
-            if (IsTimestampSubstituted())
+            
+            if (IsTimestampSubstituted()) {
                 addElementWithValue(dataObject, "do_ts_sub", (long)1);
+            }
         }
         else {
             addElementWithValue(dataObject, "do_ts", (long)PivotTimestamp::GetCurrentTimeInMs());
