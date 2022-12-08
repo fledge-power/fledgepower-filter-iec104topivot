@@ -44,6 +44,8 @@ public:
     bool ClockNotSynchronized() {return m_clockNotSynchronized;};
     int TimeAccuracy() {return m_timeAccuracy;};
 
+    static uint64_t GetCurrentTimeInMs();
+
 private:
 
     void handleTimeQuality(Datapoint* timeQuality);

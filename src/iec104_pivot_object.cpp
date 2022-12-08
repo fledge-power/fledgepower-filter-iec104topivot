@@ -11,6 +11,8 @@
 
 #include "iec104_pivot_object.hpp"
 
+#include <sys/time.h>
+
 static Datapoint*
 createDp(const string& name)
 {
@@ -210,6 +212,16 @@ PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
             }
         }
     }
+}
+
+uint64_t
+PivotTimestamp::GetCurrentTimeInMs()
+{
+    struct timeval now;
+
+    gettimeofday(&now, NULL);
+
+    return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
 }
 
 Datapoint*

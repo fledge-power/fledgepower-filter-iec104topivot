@@ -16,8 +16,6 @@
 #include <logger.h>
 #include <plugin_api.h>
 
-#include <time.h>
-
 IEC104PivotFilter::IEC104PivotFilter(const std::string& filterName,
         ConfigCategory* filterConfig,
         OUTPUT_HANDLE *outHandle,
@@ -34,16 +32,6 @@ IEC104PivotFilter::IEC104PivotFilter(const std::string& filterName,
 IEC104PivotFilter::~IEC104PivotFilter()
 {
 
-}
-
-static uint64_t
-getTimeInMs()
-{
-    struct timeval now;
-
-    gettimeofday(&now, NULL);
-
-    return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
 }
 
 static bool
@@ -71,6 +59,20 @@ checkTypeMatch(std::string& incomingType, IEC104PivotDataPoint* exchangeConfig)
     }
 
     return false;
+}
+
+static void
+appendTimestamp(PivotObject& pivot, bool hasDoTs, long doTs, bool doTsIv, bool doTsSu, bool doTsSub)
+{
+    if (hasDoTs) {
+        pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+        pivot.addTmOrg(doTsSub);
+    }
+    else {
+        doTs = (long)PivotTimestamp::GetCurrentTimeInMs();
+        pivot.addTimestamp(doTs, false, false, true);
+        pivot.addTmOrg(true);
+    }
 }
 
 Datapoint*
@@ -277,15 +279,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
+                appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
                 
                 convertedDatapoint = pivot.toDatapoint();
             }
@@ -321,15 +315,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
+                appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
 
                 convertedDatapoint = pivot.toDatapoint();
             }
@@ -354,15 +340,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
+                appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
 
                 convertedDatapoint = pivot.toDatapoint();
             }
@@ -387,15 +365,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
+                appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
 
                 convertedDatapoint = pivot.toDatapoint();
             }
@@ -420,15 +390,7 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
                 pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
+                appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
 
                 convertedDatapoint = pivot.toDatapoint();
             }

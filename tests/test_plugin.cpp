@@ -491,16 +491,33 @@ TEST(PivotIEC104Plugin, M_DP_TB_1)
     ASSERT_TRUE(isValueInt(causeStVal));
     ASSERT_EQ(3, getValueInt(causeStVal));
 
+    Datapoint* t = getChild(spsTyp, "t");
+    ASSERT_NE(nullptr, t);
+
+    Datapoint* t_SecondsSinceEpoch = getChild(t, "SecondSinceEpoch");
+    ASSERT_NE(nullptr, t_SecondsSinceEpoch);
+    ASSERT_TRUE(isValueInt(t_SecondsSinceEpoch));
+    long secondSinceEpochValue = getValueInt(t_SecondsSinceEpoch);
+
+    ASSERT_NEAR(1668631513, secondSinceEpochValue, 1);
+
+    Datapoint* tmOrg = getChild(gtis, "TmOrg");
+    ASSERT_NE(nullptr, tmOrg);
+    Datapoint* tmOrg_stVal = getChild(tmOrg, "stVal");
+    ASSERT_NE(nullptr, tmOrg_stVal);
+    ASSERT_TRUE(isValueStr(tmOrg_stVal));
+    ASSERT_EQ("genuine", getValueStr(tmOrg_stVal));
+
     plugin_shutdown(handle);
 }
 
-TEST(PivotIEC104Plugin, M_DP_NA_1)
+TEST(PivotIEC104Plugin, M_DP_TB_1_time_substituted)
 {
     outputHandlerCalled = 0;
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, true));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -539,7 +556,105 @@ TEST(PivotIEC104Plugin, M_DP_NA_1)
     Datapoint* stVal = getChild(spsTyp, "stVal");
     ASSERT_NE(nullptr, stVal);
     ASSERT_TRUE(isValueStr(stVal));
+    ASSERT_EQ("on", getValueStr(stVal));
+
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(3, getValueInt(causeStVal));
+
+    Datapoint* t = getChild(spsTyp, "t");
+    ASSERT_NE(nullptr, t);
+
+    Datapoint* t_SecondsSinceEpoch = getChild(t, "SecondSinceEpoch");
+    ASSERT_NE(nullptr, t_SecondsSinceEpoch);
+    ASSERT_TRUE(isValueInt(t_SecondsSinceEpoch));
+    long secondSinceEpochValue = getValueInt(t_SecondsSinceEpoch);
+
+    ASSERT_NEAR(1668631513, secondSinceEpochValue, 1);
+
+    Datapoint* tmOrg = getChild(gtis, "TmOrg");
+    ASSERT_NE(nullptr, tmOrg);
+    Datapoint* tmOrg_stVal = getChild(tmOrg, "stVal");
+    ASSERT_NE(nullptr, tmOrg_stVal);
+    ASSERT_TRUE(isValueStr(tmOrg_stVal));
+    ASSERT_EQ("substituted", getValueStr(tmOrg_stVal));
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, M_DP_NA_1)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 0, true, false, false));
+
+    Reading* reading = new Reading(std::string("TS3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    uint64_t timeInMs = PivotTimestamp::GetCurrentTimeInMs();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIS");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* spsTyp = getChild(gtis, "DpsTyp");
+    ASSERT_NE(nullptr, spsTyp);
+    Datapoint* stVal = getChild(spsTyp, "stVal");
+    ASSERT_NE(nullptr, stVal);
+    ASSERT_TRUE(isValueStr(stVal));
     ASSERT_EQ("off", getValueStr(stVal));
+
+    Datapoint* t = getChild(spsTyp, "t");
+    ASSERT_NE(nullptr, t);
+
+    Datapoint* t_SecondsSinceEpoch = getChild(t, "SecondSinceEpoch");
+    ASSERT_NE(nullptr, t_SecondsSinceEpoch);
+    ASSERT_TRUE(isValueInt(t_SecondsSinceEpoch));
+    long secondSinceEpochValue = getValueInt(t_SecondsSinceEpoch);
+
+    ASSERT_NEAR(timeInMs / 1000, secondSinceEpochValue, 1);
+
+    Datapoint* tmOrg = getChild(gtis, "TmOrg");
+    ASSERT_NE(nullptr, tmOrg);
+    Datapoint* tmOrg_stVal = getChild(tmOrg, "stVal");
+    ASSERT_NE(nullptr, tmOrg_stVal);
+    ASSERT_TRUE(isValueStr(tmOrg_stVal));
+    ASSERT_EQ("substituted", getValueStr(tmOrg_stVal));
 
     Datapoint* comingFrom = getChild(gtis, "ComingFrom");
     ASSERT_NE(nullptr, comingFrom);
@@ -586,6 +701,8 @@ TEST(PivotIEC104Plugin, M_DP_NA_1_intermediate)
 
     ASSERT_TRUE(handle != nullptr);
 
+    uint64_t timeInMs = PivotTimestamp::GetCurrentTimeInMs();
+
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
@@ -602,6 +719,23 @@ TEST(PivotIEC104Plugin, M_DP_NA_1_intermediate)
     ASSERT_NE(nullptr, stVal);
     ASSERT_TRUE(isValueStr(stVal));
     ASSERT_EQ("intermediate-state", getValueStr(stVal));
+
+    Datapoint* t = getChild(spsTyp, "t");
+    ASSERT_NE(nullptr, t);
+
+    Datapoint* t_SecondsSinceEpoch = getChild(t, "SecondSinceEpoch");
+    ASSERT_NE(nullptr, t_SecondsSinceEpoch);
+    ASSERT_TRUE(isValueInt(t_SecondsSinceEpoch));
+    long secondSinceEpochValue = getValueInt(t_SecondsSinceEpoch);
+
+    ASSERT_NEAR(timeInMs / 1000, secondSinceEpochValue, 1);
+
+    Datapoint* tmOrg = getChild(gtis, "TmOrg");
+    ASSERT_NE(nullptr, tmOrg);
+    Datapoint* tmOrg_stVal = getChild(tmOrg, "stVal");
+    ASSERT_NE(nullptr, tmOrg_stVal);
+    ASSERT_TRUE(isValueStr(tmOrg_stVal));
+    ASSERT_EQ("substituted", getValueStr(tmOrg_stVal));
 
     Datapoint* comingFrom = getChild(gtis, "ComingFrom");
     ASSERT_NE(nullptr, comingFrom);
