@@ -1224,5 +1224,136 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NA_1)
     ASSERT_TRUE(isValueInt(qualityFlag));
     ASSERT_EQ(0, getValueInt(qualityFlag));
 
+    Datapoint* doTs = getChild(dataobject, "do_ts");
+    ASSERT_NE(nullptr, doTs);
+    ASSERT_TRUE(isValueInt(doTs));
+    ASSERT_EQ(1669123796250, getValueInt(doTs));
+
+    Datapoint* doTsSub = getChild(dataobject, "do_ts_sub");
+    ASSERT_EQ(nullptr, doTsSub);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, SpsTyp_withoutTimestamp_to_M_SP_TB_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, spsTyp);
+
+    spsTyp->setIdentifier("ID-45-872");
+    spsTyp->setCause(3); /* COT = spont */
+    spsTyp->setStVal(false);
+    spsTyp->addQuality(true, true, true, false, true, true);
+    //spsTyp->addTimestamp(1669123796250, false, false, false);
+
+    Datapoint* dp = spsTyp->toDatapoint();
+
+    delete spsTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TS2"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_SP_TB_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(872, getValueInt(doIoa));
+
+    Datapoint* doCot= getChild(dataobject, "do_cot");
+    ASSERT_NE(nullptr, doCot);
+    ASSERT_TRUE(isValueInt(doCot));
+    ASSERT_EQ(3, getValueInt(doCot));
+
+    Datapoint* doValue= getChild(dataobject, "do_value");
+    ASSERT_NE(nullptr, doValue);
+    ASSERT_TRUE(isValueInt(doValue));
+    ASSERT_EQ(0, getValueInt(doValue));
+
+    Datapoint* qualityFlag;
+
+    qualityFlag = getChild(dataobject, "do_quality_bl");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_iv");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_nt");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_ov");
+    ASSERT_EQ(nullptr, qualityFlag);
+
+    qualityFlag = getChild(dataobject, "do_quality_sb");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_test");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    uint64_t timeInMs = PivotTimestamp::GetCurrentTimeInMs();
+
+    Datapoint* doTs = getChild(dataobject, "do_ts");
+    ASSERT_NE(nullptr, doTs);
+    ASSERT_TRUE(isValueInt(doTs));
+    long tsValue = getValueInt(doTs);
+    ASSERT_NEAR(timeInMs, tsValue, 1000);
+
+    Datapoint* doTsSub = getChild(dataobject, "do_ts_sub");
+    ASSERT_NE(nullptr, doTsSub);
+    ASSERT_TRUE(isValueInt(doTsSub));
+    ASSERT_EQ(1, getValueInt(doTsSub));
+
     plugin_shutdown(handle);
 }

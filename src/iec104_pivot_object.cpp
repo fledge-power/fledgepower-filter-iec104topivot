@@ -219,7 +219,7 @@ PivotTimestamp::GetCurrentTimeInMs()
 {
     struct timeval now;
 
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, nullptr);
 
     return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
 }
@@ -431,6 +431,19 @@ PivotObject::PivotObject(Datapoint* pivotData)
 
             if (confirmationVal > 0) {
                 m_isConfirmation = true;
+            }
+        }
+
+        Datapoint* tmOrg = getChild(m_ln, "TmOrg");
+
+        if (tmOrg) {
+            string tmOrgValue = getChildValueStr(tmOrg, "stVal");
+
+            if (tmOrgValue == "substituted") {
+                m_timestampSubstituted = true;
+            }
+            else {
+                m_timestampSubstituted = false;
             }
         }
 
@@ -691,7 +704,12 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
             addElementWithValue(dataObject, "do_ts_iv", (long)(timeInvalid ? 1 : 0));
             //addElementWithValue(dataObject, "do_ts_su", (long)0);
-            //addElementWithValue(dataObject, "do_ts_sub", (long)0);
+            if (IsTimestampSubstituted())
+                addElementWithValue(dataObject, "do_ts_sub", (long)1);
+        }
+        else {
+            addElementWithValue(dataObject, "do_ts", (long)PivotTimestamp::GetCurrentTimeInMs());
+            addElementWithValue(dataObject, "do_ts_sub", (long)1);
         }
     }
 

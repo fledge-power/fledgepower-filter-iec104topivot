@@ -134,6 +134,8 @@ public:
     bool OperatorBlocked() {return m_operatorBlocked;};
     bool Test() {return m_test;};
 
+    bool IsTimestampSubstituted() {return m_timestampSubstituted;};
+
 private:
 
     Datapoint* getCdc(Datapoint* dp);
@@ -165,6 +167,8 @@ private:
     bool m_test = false;
 
     PivotTimestamp* m_timestamp = nullptr;
+
+    bool m_timestampSubstituted = false;
 
     bool hasIntVal = true;
     long intVal;
