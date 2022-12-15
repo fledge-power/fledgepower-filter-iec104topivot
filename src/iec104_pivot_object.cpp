@@ -11,6 +11,8 @@
 
 #include "iec104_pivot_object.hpp"
 
+#include <sys/time.h>
+
 static Datapoint*
 createDp(const string& name)
 {
@@ -212,6 +214,16 @@ PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
     }
 }
 
+uint64_t
+PivotTimestamp::GetCurrentTimeInMs()
+{
+    struct timeval now;
+
+    gettimeofday(&now, nullptr);
+
+    return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
+}
+
 Datapoint*
 PivotObject::getCdc(Datapoint* dp)
 {
@@ -302,18 +314,6 @@ PivotObject::handleDetailQuality(Datapoint* detailQuality)
                 else
                     m_overflow = false;
             }
-            else if (child->getName() == "operatorBlocked") {
-                if (getValueInt(child) > 0)
-                    m_operatorBlocked = true;
-                else
-                    m_operatorBlocked = false;
-            }
-            else if (child->getName() == "test") {
-                if (getValueInt(child) > 0)
-                    m_test = true;
-                else
-                    m_test = false;
-            }
         }
     }
 }
@@ -360,6 +360,18 @@ PivotObject::handleQuality(Datapoint* q)
             }
             else if (child->getName() == "DetailQuality") {
                 handleDetailQuality(child);
+            }
+            else if (child->getName() == "operatorBlocked") {
+                if (getValueInt(child) > 0)
+                    m_operatorBlocked = true;
+                else
+                    m_operatorBlocked = false;
+            }
+            else if (child->getName() == "test") {
+                if (getValueInt(child) > 0)
+                    m_test = true;
+                else
+                    m_test = false;
             }
         }
     }
@@ -419,6 +431,32 @@ PivotObject::PivotObject(Datapoint* pivotData)
 
             if (confirmationVal > 0) {
                 m_isConfirmation = true;
+            }
+        }
+
+        Datapoint* tmOrg = getChild(m_ln, "TmOrg");
+
+        if (tmOrg) {
+            string tmOrgValue = getChildValueStr(tmOrg, "stVal");
+
+            if (tmOrgValue == "substituted") {
+                m_timestampSubstituted = true;
+            }
+            else {
+                m_timestampSubstituted = false;
+            }
+        }
+
+        Datapoint* tmValidity  = getChild(m_ln, "TmValidity");
+
+        if (tmValidity) {
+            string tmValidityValue = getChildValueStr(tmValidity, "stVal");
+
+            if (tmValidityValue == "invalid") {
+                m_timestampInvalid = true;
+            }
+            else {
+                m_timestampInvalid = false;
             }
         }
 
@@ -506,7 +544,7 @@ PivotObject::PivotObject(const string& pivotLN, const string& valueType)
 
     m_ln = addElement(m_dp, pivotLN);
 
-    addElementWithValue(m_ln, "ComingFrom", "IEC104");
+    addElementWithValue(m_ln, "ComingFrom", "iec104");
 
     m_cdc = addElement(m_ln, valueType);
 }
@@ -559,6 +597,16 @@ PivotObject::setMagI(int value)
 }
 
 void
+PivotObject::setConfirmation(bool value)
+{
+    Datapoint* confirmation = addElement(m_ln, "Confirmation");
+
+    if (confirmation) {
+        addElementWithValue(confirmation, "stVal", (long)(value ? 1 : 0));
+    }
+}
+
+void
 PivotObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
 {
     Datapoint* q = addElement(m_cdc, "q");
@@ -608,6 +656,17 @@ PivotObject::addTmOrg(bool substituted)
 }
 
 void
+PivotObject::addTmValidity(bool invalid)
+{
+    Datapoint* tmValidity = addElement(m_ln, "TmValidity");
+
+    if (invalid)
+        addElementWithValue(tmValidity, "stVal", "invalid");
+    else
+        addElementWithValue(tmValidity, "stVal", "good");
+}
+
+void
 PivotObject::addTimestamp(long ts, bool iv, bool su, bool sub)
 {
     Datapoint* t = addElement(m_cdc, "t");
@@ -635,6 +694,7 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
         addElementWithValue(dataObject, "do_ca", (long)(exchangeConfig->getCA()));
         addElementWithValue(dataObject, "do_ioa", (long)(exchangeConfig->getIOA()));
         addElementWithValue(dataObject, "do_cot", (long)getCause());
+
         addElementWithValue(dataObject, "do_test", (long)(Test() ? 1 : 0));
 
         addElementWithValue(dataObject, "do_quality_iv", (long)(getValidity() == Validity::GOOD ? 0 : 1));
@@ -666,9 +726,19 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
             bool timeInvalid = m_timestamp->ClockFailure() || m_timestamp->ClockNotSynchronized();
 
-            addElementWithValue(dataObject, "do_ts_iv", (long)(timeInvalid ? 1 : 0));
+            if (timeInvalid || IsTimestampInvalid()) {
+                addElementWithValue(dataObject, "do_ts_iv", (long)1);
+            }
+
             //addElementWithValue(dataObject, "do_ts_su", (long)0);
-            //addElementWithValue(dataObject, "do_ts_sub", (long)0);
+            
+            if (IsTimestampSubstituted()) {
+                addElementWithValue(dataObject, "do_ts_sub", (long)1);
+            }
+        }
+        else {
+            addElementWithValue(dataObject, "do_ts", (long)PivotTimestamp::GetCurrentTimeInMs());
+            addElementWithValue(dataObject, "do_ts_sub", (long)1);
         }
     }
 

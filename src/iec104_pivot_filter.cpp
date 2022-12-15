@@ -16,8 +16,6 @@
 #include <logger.h>
 #include <plugin_api.h>
 
-#include <time.h>
-
 IEC104PivotFilter::IEC104PivotFilter(const std::string& filterName,
         ConfigCategory* filterConfig,
         OUTPUT_HANDLE *outHandle,
@@ -34,16 +32,6 @@ IEC104PivotFilter::IEC104PivotFilter(const std::string& filterName,
 IEC104PivotFilter::~IEC104PivotFilter()
 {
 
-}
-
-static uint64_t
-getTimeInMs()
-{
-    struct timeval now;
-
-    gettimeofday(&now, NULL);
-
-    return ((uint64_t) now.tv_sec * 1000LL) + (now.tv_usec / 1000);
 }
 
 static bool
@@ -73,6 +61,24 @@ checkTypeMatch(std::string& incomingType, IEC104PivotDataPoint* exchangeConfig)
     return false;
 }
 
+static void
+appendTimestamp(PivotObject& pivot, bool hasDoTs, long doTs, bool doTsIv, bool doTsSu, bool doTsSub)
+{
+    if (hasDoTs) {
+        pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
+        pivot.addTmOrg(doTsSub);
+
+        if (doTsIv) {
+            pivot.addTmValidity(true);
+        }
+    }
+    else {
+        doTs = (long)PivotTimestamp::GetCurrentTimeInMs();
+        pivot.addTimestamp(doTs, false, false, true);
+        pivot.addTmOrg(true);
+    }
+}
+
 Datapoint*
 IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
 {
@@ -80,324 +86,318 @@ IEC104PivotFilter::convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataP
 
     DatapointValue& dpv = sourceDp->getData();
 
-    if (dpv.getType() == DatapointValue::T_DP_DICT)
+    if (dpv.getType() != DatapointValue::T_DP_DICT)
+        return nullptr;
+
+    std::vector<Datapoint*>* datapoints = dpv.getDpVec();
+
+    bool hasDoType = false;
+    bool hasDoCot = false;
+
+    string doType = "";
+    int doCot = 0;
+
+    bool hasDoQualityIv = false;
+    bool hasDoQualityBl = false;
+    bool hasDoQualityOv = false;
+    bool hasDoQualitySb = false;
+    bool hasDoQualityNt = false;
+
+    bool doQualityIv = false;
+    bool doQualityBl = false;
+    bool doQualityOv = false;
+    bool doQualitySb = false;
+    bool doQualityNt = false;
+
+    bool hasDoTs = false;
+    bool hasDoTsIv = false;
+    bool hasDoTsSu = false;
+    bool hasDoTsSub = false;
+
+    long doTs = 0;
+    bool doTsIv = false;
+    bool doTsSu = false;
+    bool doTsSub = false;
+
+    bool hasDoTest = false;
+    bool doTest = false;
+    bool comingFromIec104 = true;
+
+    bool hasComingFrom = false;
+
+    bool hasDoNegative = false;
+    bool doNegative = false;
+
+    Datapoint* doValue = nullptr;
+
+    for (Datapoint* dp : *datapoints)
     {
-        std::vector<Datapoint*>* datapoints = dpv.getDpVec();
+        if ((hasDoType == false) && (dp->getName() == "do_type")) {
+            if (dp->getData().getType() == DatapointValue::T_STRING) {
+                doType = dp->getData().toStringValue();
 
-        bool hasDoType = false;
-        bool hasDoCot = false;
-
-        string doType = "";
-        int doCot = 0;
-
-        bool hasDoQualityIv = false;
-        bool hasDoQualityBl = false;
-        bool hasDoQualityOv = false;
-        bool hasDoQualitySb = false;
-        bool hasDoQualityNt = false;
-
-        bool doQualityIv = false;
-        bool doQualityBl = false;
-        bool doQualityOv = false;
-        bool doQualitySb = false;
-        bool doQualityNt = false;
-
-        bool hasDoTs = false;
-        bool hasDoTsIv = false;
-        bool hasDoTsSu = false;
-        bool hasDoTsSub = false;
-
-        long doTs = 0;
-        bool doTsIv = false;
-        bool doTsSu = false;
-        bool doTsSub = false;
-
-        bool hasDoTest = false;
-        bool doTest = false;
-
-        Datapoint* doValue = nullptr;
-
-        for (Datapoint* dp : *datapoints) {
-            printf("DP name: %s value: %s\n", dp->getName().c_str(), dp->getData().toString().c_str());
-
-            if ((hasDoType == false) && (dp->getName() == "do_type")) {
-                if (dp->getData().getType() == DatapointValue::T_STRING) {
-                    doType = dp->getData().toStringValue();
-
-                    if (checkTypeMatch(doType, exchangeConfig)) {
-                        hasDoType = true;
-                    }
-                    else {
-                        Logger::getLogger()->warn("Input type does not match configured type for %s", exchangeConfig->getLabel().c_str());
-                    }
+                if (checkTypeMatch(doType, exchangeConfig)) {
+                    hasDoType = true;
                 }
-            }
-            else if ((hasDoCot == false) && (dp->getName() == "do_cot")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    doCot = dp->getData().toInt();
-                    hasDoCot = true;
+                else {
+                    Logger::getLogger()->warn("Input type does not match configured type for %s", exchangeConfig->getLabel().c_str());
                 }
-            }
-            else if ((doValue == nullptr) && (dp->getName() == "do_value"))
-            {
-                doValue = dp;
-            }
-            else if ((hasDoQualityIv == false) && (dp->getName() == "do_quality_iv")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doQualityIv = true;
-                }
-               
-                hasDoQualityIv = true;
-            }
-            else if ((hasDoQualityBl == false) && (dp->getName() == "do_quality_bl")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doQualityBl = true;
-                }
-               
-                hasDoQualityBl = true;
-            }
-            else if ((hasDoQualityOv == false) && (dp->getName() == "do_quality_ov")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doQualityOv = true;
-                }
-               
-                hasDoQualityOv = true;
-            }
-            else if ((hasDoQualitySb == false) && (dp->getName() == "do_quality_sb")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doQualitySb = true;
-                }
-               
-                hasDoQualitySb = true;
-            }
-            else if ((hasDoQualityNt == false) && (dp->getName() == "do_quality_nt")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doQualityNt = true;
-                }
-               
-                hasDoQualityNt = true;
-            }
-            else if ((hasDoTs == false) && (dp->getName() == "do_ts")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    doTs = dp->getData().toInt();
-                    hasDoTs = true;
-                }
-            }
-            else if ((hasDoTsIv == false) && (dp->getName() == "do_ts_iv")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doTsIv = true;
-                }
-               
-                hasDoTsIv = true;
-            }
-            else if ((hasDoTsSu == false) && (dp->getName() == "do_ts_su")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doTsSu = true;
-                }
-               
-                hasDoTsSu = true;
-            }
-            else if ((hasDoTsSub == false) && (dp->getName() == "do_ts_sub")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doTsSub = true;
-                }
-               
-                hasDoTsSub = true;
-            }
-            else if ((hasDoTest == false) && (dp->getName() == "do_test")) {
-                if (dp->getData().getType() == DatapointValue::T_INTEGER) {
-                    if (dp->getData().toInt() > 0)
-                        doTest = true;
-                }
-               
-                hasDoTest= true;
             }
         }
-
-        //NOTE: when doValue is missing it could be an ACK!
-
-        if (hasDoType && hasDoCot && doValue) {
-
-            if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
-            {
-                PivotObject pivot("GTIS", "SpsTyp");
-
-                pivot.setIdentifier(exchangeConfig->getPivotId());
-                pivot.setCause(doCot);
-                
-                if (doValue) {
-                    bool spsValue = false;
-
-                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
-                        if (doValue->getData().toInt() > 0) {
-                            spsValue = true;
-                        }
-                    }
-
-                    pivot.setStVal(spsValue);
-                }
-
-                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
-
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
-                
-                convertedDatapoint = pivot.toDatapoint();
+        else if ((hasDoCot == false) && (dp->getName() == "do_cot")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                doCot = dp->getData().toInt();
+                hasDoCot = true;
             }
-            else if (doType == "M_DP_NA_1" || doType == "M_DP_TB_1") 
-            {
-                PivotObject pivot("GTIS", "DpsTyp");
-
-                pivot.setIdentifier(exchangeConfig->getPivotId());
-                pivot.setCause(doCot);
-                
-                if (doValue) {
-                     
-                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
-                        int dpsValue = doValue->getData().toInt();
-
-                        if (dpsValue == 0) {
-                            pivot.setStValStr("intermediate-state");
-                        }
-                        else if (dpsValue == 1) {
-                            pivot.setStValStr("off");
-                        }
-                        else if (dpsValue == 2) {
-                            pivot.setStValStr("on");
-                        }
-                        else {
-                            pivot.setStValStr("bad-state");
-                        }
-                    }
-                }
-
-                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
-
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
-
-                convertedDatapoint = pivot.toDatapoint();
-            }
-            else if (doType == "M_ME_NA_1" || doType == "M_ME_TD_1") /* normalized measured value */
-            {
-                PivotObject pivot("GTIM", "MvTyp");
-
-                pivot.setIdentifier(exchangeConfig->getPivotId());
-                pivot.setCause(doCot);
-
-                if (doValue) {
-                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
-                        pivot.setMagI(doValue->getData().toInt());
-                    }
-                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
-                        pivot.setMagF(doValue->getData().toDouble());
-                    }
-                }
-
-                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
-
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
-
-                convertedDatapoint = pivot.toDatapoint();
-            }
-            else if (doType == "M_ME_NB_1" || doType == "M_ME_TE_1") /* scaled measured value */
-            {
-                PivotObject pivot("GTIM", "MvTyp");
-
-                pivot.setIdentifier(exchangeConfig->getPivotId());
-                pivot.setCause(doCot);
-
-                if (doValue) {
-                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
-                        pivot.setMagI(doValue->getData().toInt());
-                    }
-                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
-                        pivot.setMagF(doValue->getData().toDouble());
-                    }
-                }
-
-                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
-
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
-
-                convertedDatapoint = pivot.toDatapoint();
-            }
-            else if (doType == "M_ME_NC_1" || doType == "M_ME_TF_1") /* short (float) measured value */
-            {
-                PivotObject pivot("GTIM", "MvTyp");
-
-                pivot.setIdentifier(exchangeConfig->getPivotId());
-                pivot.setCause(doCot);
-
-                if (doValue) {
-                    if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
-                        pivot.setMagI(doValue->getData().toInt());
-                    }
-                    else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
-                        pivot.setMagF(doValue->getData().toDouble());
-                    }
-                }
-
-                pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
-
-                if (hasDoTs) {
-                    pivot.addTimestamp(doTs, doTsIv, doTsSu, doTsSub);
-                    pivot.addTmOrg(false);
-                }
-                else {
-                    doTs = (long)getTimeInMs();
-                    pivot.addTimestamp(doTs, false, false, true);
-                    pivot.addTmOrg(true);
-                }
-
-                convertedDatapoint = pivot.toDatapoint();
-            }
-
         }
-        else {
-            printf("element is missing\n");
+        else if ((doValue == nullptr) && (dp->getName() == "do_value"))
+        {
+            doValue = dp;
+        }
+        else if ((hasDoQualityIv == false) && (dp->getName() == "do_quality_iv")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doQualityIv = true;
+            }
+           
+            hasDoQualityIv = true;
+        }
+        else if ((hasDoQualityBl == false) && (dp->getName() == "do_quality_bl")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doQualityBl = true;
+            }
+           
+            hasDoQualityBl = true;
+        }
+        else if ((hasDoQualityOv == false) && (dp->getName() == "do_quality_ov")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doQualityOv = true;
+            }
+           
+            hasDoQualityOv = true;
+        }
+        else if ((hasDoQualitySb == false) && (dp->getName() == "do_quality_sb")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doQualitySb = true;
+            }
+           
+            hasDoQualitySb = true;
+        }
+        else if ((hasDoQualityNt == false) && (dp->getName() == "do_quality_nt")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doQualityNt = true;
+            }
+           
+            hasDoQualityNt = true;
+        }
+        else if ((hasDoTs == false) && (dp->getName() == "do_ts")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                doTs = dp->getData().toInt();
+                hasDoTs = true;
+            }
+        }
+        else if ((hasDoTsIv == false) && (dp->getName() == "do_ts_iv")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doTsIv = true;
+            }
+           
+            hasDoTsIv = true;
+        }
+        else if ((hasDoTsSu == false) && (dp->getName() == "do_ts_su")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doTsSu = true;
+            }
+           
+            hasDoTsSu = true;
+        }
+        else if ((hasDoTsSub == false) && (dp->getName() == "do_ts_sub")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doTsSub = true;
+            }
+           
+            hasDoTsSub = true;
+        }
+        else if ((hasDoTest == false) && (dp->getName() == "do_test")) {
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                if (dp->getData().toInt() > 0)
+                    doTest = true;
+            }
+           
+            hasDoTest= true;
+        }
+        else if ((hasComingFrom == false) && (dp->getName() == "do_comingfrom")) {
+            if (dp->getData().getType() == DatapointValue::T_STRING) {
+                string comingFromValue = dp->getData().toStringValue();
+
+                if (comingFromValue != "iec104") {
+                    comingFromIec104 = false;
+                }
+            }
+        }
+        else if ((hasDoNegative == false) && (dp->getName() == "do_negative")) {
+            if ((dp->getData().getType() == DatapointValue::T_INTEGER) && (dp->getData().toInt() > 0)) {
+                doNegative = true;
+            }
+
+            hasDoNegative = true;
         }
     }
-    else {
-        printf("datapointvalue has unexpected type: %s(%i)\n", dpv.getTypeStr().c_str(), dpv.getType());
+
+    if (comingFromIec104 == false) {
+        Logger::getLogger()->warn("data_object for %s is not from IEC 104 plugin -> ignore", exchangeConfig->getLabel().c_str());
+    }
+
+    //NOTE: when doValue is missing it could be an ACK!
+
+    if (comingFromIec104 && hasDoType && hasDoCot) {
+
+        if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
+        {
+            PivotObject pivot("GTIS", "SpsTyp");
+
+            pivot.setIdentifier(exchangeConfig->getPivotId());
+            pivot.setCause(doCot);
+            
+            if (doValue) {
+                bool spsValue = false;
+
+                if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    if (doValue->getData().toInt() > 0) {
+                        spsValue = true;
+                    }
+                }
+
+                pivot.setStVal(spsValue);
+            }
+            else {
+                pivot.setConfirmation(doNegative);
+            }
+
+            pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+            appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
+            
+            convertedDatapoint = pivot.toDatapoint();
+        }
+        else if (doType == "M_DP_NA_1" || doType == "M_DP_TB_1") 
+        {
+            PivotObject pivot("GTIS", "DpsTyp");
+
+            pivot.setIdentifier(exchangeConfig->getPivotId());
+            pivot.setCause(doCot);
+            
+            if (doValue) {
+                 
+                if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    int dpsValue = doValue->getData().toInt();
+
+                    if (dpsValue == 0) {
+                        pivot.setStValStr("intermediate-state");
+                    }
+                    else if (dpsValue == 1) {
+                        pivot.setStValStr("off");
+                    }
+                    else if (dpsValue == 2) {
+                        pivot.setStValStr("on");
+                    }
+                    else {
+                        pivot.setStValStr("bad-state");
+                    }
+                }
+            }
+            else {
+                pivot.setConfirmation(doNegative);
+            }
+
+            pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+            appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
+
+            convertedDatapoint = pivot.toDatapoint();
+        }
+        else if (doType == "M_ME_NA_1" || doType == "M_ME_TD_1") /* normalized measured value */
+        {
+            PivotObject pivot("GTIM", "MvTyp");
+
+            pivot.setIdentifier(exchangeConfig->getPivotId());
+            pivot.setCause(doCot);
+
+            if (doValue) {
+                if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    pivot.setMagI(doValue->getData().toInt());
+                }
+                else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                    pivot.setMagF(doValue->getData().toDouble());
+                }
+            }
+            else {
+                pivot.setConfirmation(doNegative);
+            }
+
+            pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+            appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
+
+            convertedDatapoint = pivot.toDatapoint();
+        }
+        else if (doType == "M_ME_NB_1" || doType == "M_ME_TE_1") /* scaled measured value */
+        {
+            PivotObject pivot("GTIM", "MvTyp");
+
+            pivot.setIdentifier(exchangeConfig->getPivotId());
+            pivot.setCause(doCot);
+
+            if (doValue) {
+                if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    pivot.setMagI(doValue->getData().toInt());
+                }
+                else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                    pivot.setMagF(doValue->getData().toDouble());
+                }
+            }
+            else {
+                pivot.setConfirmation(doNegative);
+            }
+
+            pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+            appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
+
+            convertedDatapoint = pivot.toDatapoint();
+        }
+        else if (doType == "M_ME_NC_1" || doType == "M_ME_TF_1") /* short (float) measured value */
+        {
+            PivotObject pivot("GTIM", "MvTyp");
+
+            pivot.setIdentifier(exchangeConfig->getPivotId());
+            pivot.setCause(doCot);
+
+            if (doValue) {
+                if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    pivot.setMagI(doValue->getData().toInt());
+                }
+                else if (doValue->getData().getType() == DatapointValue::T_FLOAT) {
+                    pivot.setMagF(doValue->getData().toDouble());
+                }
+            }
+            else {
+                pivot.setConfirmation(doNegative);
+            }
+
+            pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
+
+            appendTimestamp(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
+
+            convertedDatapoint = pivot.toDatapoint();
+        }
+
     }
 
     return convertedDatapoint;
@@ -415,7 +415,7 @@ IEC104PivotFilter::convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotData
     }
     catch (PivotObjectException& e)
     {
-        printf("Failed to convert pivot object: %s\n", e.getContext().c_str());
+        Logger::getLogger()->error("Failed to convert pivot object: %s", e.getContext().c_str());
     }
 
     return convertedDatapoint;
@@ -437,9 +437,8 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
         auto exchangeData = m_config.getExchangeDefinitions();
 
-        if (exchangeData.find(assetName) != exchangeData.end()) {
-            Logger::getLogger()->info("Found asset (%s) in exchanged data", assetName.c_str());
-
+        if (exchangeData.find(assetName) != exchangeData.end())
+        {
             IEC104PivotDataPoint* exchangeConfig = exchangeData[assetName];
 
             std::vector<Datapoint*>& datapoints = reading->getReadingData();
@@ -457,21 +456,17 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         convertedDatapoints.push_back(convertedDp);
                     }
                     else {
-                        printf("Failed to convert object\n");
+                        Logger::getLogger()->error("Failed to convert object");
                     }
                 }
                 else if (dp->getName() == "PIVOT") {
                     Datapoint* convertedDp = convertDatapointToIEC104(dp, exchangeConfig);
 
-                    printf("Converted data point to IEC 104\n");
-
                     if (convertedDp) {
-                        printf("  added converted data point\n");
                         convertedDatapoints.push_back(convertedDp);
                     }
                 }
                 else {
-                    printf("ERROR: (%s) not a data_object\n", dp->getName().c_str());
                     Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
                 }
             }
@@ -491,7 +486,6 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
 
         if (reading->getReadingData().size() == 0) {
-            printf("Reading has no elements\n");
             readIt = readings->erase(readIt);
         }
         else {
@@ -499,11 +493,9 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
     }
 
-    if (readings->empty() == false) {
-
-        printf("Send %lu converted readings\n", readings->size());
-
-        Logger::getLogger()->info("Send %lu converted readings", readings->size());
+    if (readings->empty() == false)
+    {
+        Logger::getLogger()->debug("Send %lu converted readings", readings->size());
 
         m_output(m_outHandle, readingSet);
     }
@@ -518,7 +510,6 @@ IEC104PivotFilter::reconfigure(ConfigCategory* config)
     {
         if (config->itemExists("name")) {
             std::string name = config->getValue("name");
-            printf("reconfigure: name = %s\n", name.c_str());
         }
         else
             Logger::getLogger()->error("Missing name in configuration");

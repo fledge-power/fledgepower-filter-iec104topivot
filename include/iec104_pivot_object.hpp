@@ -44,6 +44,8 @@ public:
     bool ClockNotSynchronized() {return m_clockNotSynchronized;};
     int TimeAccuracy() {return m_timeAccuracy;};
 
+    static uint64_t GetCurrentTimeInMs();
+
 private:
 
     void handleTimeQuality(Datapoint* timeQuality);
@@ -102,10 +104,13 @@ public:
     void setMagF(float value);
     void setMagI(int value);
 
+    void setConfirmation(bool value);
+
     void addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test);
     void addTimestamp(long ts, bool iv, bool su, bool sub);
 
     void addTmOrg(bool substituted);
+    void addTmValidity(bool invalid);
 
     Datapoint* toDatapoint() {return m_dp;};
 
@@ -129,6 +134,9 @@ public:
 
     bool OperatorBlocked() {return m_operatorBlocked;};
     bool Test() {return m_test;};
+
+    bool IsTimestampSubstituted() {return m_timestampSubstituted;};
+    bool IsTimestampInvalid() {return m_timestampInvalid;};
 
 private:
 
@@ -161,6 +169,9 @@ private:
     bool m_test = false;
 
     PivotTimestamp* m_timestamp = nullptr;
+
+    bool m_timestampSubstituted = false;
+    bool m_timestampInvalid = false;
 
     bool hasIntVal = true;
     long intVal;
