@@ -639,6 +639,9 @@ PivotObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
     if (iv) {
         addElementWithValue(q, "Validity", "invalid");
     }
+    else if (ov || nt) {
+        addElementWithValue(q, "Validity", "questionable");
+    }
     else {
         addElementWithValue(q, "Validity", "good");
     }
