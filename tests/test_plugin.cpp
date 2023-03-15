@@ -82,6 +82,30 @@ static string exchanged_data = QUOTE({
                                   "typeid":"M_ME_NA_1"
                                }
                             ]
+                        },
+                        {
+                            "label":"TM2",
+                            "pivot_id":"ID-45-985",
+                            "pivot_type":"MvTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-985",
+                                  "typeid":"M_ME_NB_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"TM3",
+                            "pivot_id":"ID-45-986",
+                            "pivot_type":"MvTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-986",
+                                  "typeid":"M_ME_NC_1"
+                               }
+                            ]
                         }
                     ]
                 }
@@ -896,6 +920,173 @@ TEST(PivotIEC104Plugin, M_DP_NA_1_bad)
     plugin_shutdown(handle);
 }
 
+/// @brief Test requirement that non-topical flag is mapped to validity="questionable"
+TEST(PivotIEC104Plugin, M_ME_NC_1_QualityNonTopical)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_ME_NC_1", 45, 986, 1, (float)0.5f, false, false, false, false, true, 0, false, false, false));
+
+    Reading* reading = new Reading(std::string("TM3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* mag = getChild(mvTyp, "mag");
+    ASSERT_NE(nullptr, mag);
+    Datapoint* magF = getChild(mag, "f");
+    ASSERT_NE(nullptr, magF);
+
+    ASSERT_TRUE(isValueFloat(magF));
+    ASSERT_EQ(0.5f, getValueFloat(magF));
+
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("questionable", getValueStr(qValidiy));
+
+    Datapoint* qDetailQuality = getChild(q, "DetailQuality");
+    ASSERT_NE(nullptr, qDetailQuality);
+
+    Datapoint* qDetailQualityOldData = getChild(qDetailQuality, "oldData");
+    ASSERT_NE(nullptr, qDetailQualityOldData);
+    ASSERT_TRUE(isValueInt(qDetailQualityOldData));
+    ASSERT_EQ(1, getValueInt(qDetailQualityOldData));
+
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(1, getValueInt(causeStVal));
+
+    plugin_shutdown(handle);
+}
+
+/// @brief Test requirement that overflow flag is mapped to validity="questionable"
+TEST(PivotIEC104Plugin, M_ME_NC_1_QualityOverflow)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject("M_ME_NC_1", 45, 986, 1, (float)100.5f, false, false, true, false, false, 0, false, false, false));
+
+    Reading* reading = new Reading(std::string("TM3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* mag = getChild(mvTyp, "mag");
+    ASSERT_NE(nullptr, mag);
+    Datapoint* magF = getChild(mag, "f");
+    ASSERT_NE(nullptr, magF);
+
+    ASSERT_TRUE(isValueFloat(magF));
+    ASSERT_EQ(100.5f, getValueFloat(magF));
+
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("questionable", getValueStr(qValidiy));
+
+    Datapoint* qDetailQuality = getChild(q, "DetailQuality");
+    ASSERT_NE(nullptr, qDetailQuality);
+
+    Datapoint* qDetailQualityOldData = getChild(qDetailQuality, "oldData");
+    ASSERT_EQ(nullptr, qDetailQualityOldData);
+
+    Datapoint* qDetailQualityOverflow = getChild(qDetailQuality, "overflow");
+    ASSERT_NE(nullptr, qDetailQualityOverflow);
+    ASSERT_TRUE(isValueInt(qDetailQualityOverflow));
+    ASSERT_EQ(1, getValueInt(qDetailQualityOverflow));
+
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(1, getValueInt(causeStVal));
+
+    plugin_shutdown(handle);
+}
+
 TEST(PivotIEC104Plugin, TypeNotMatching)
 {
     outputHandlerCalled = 0;
@@ -1281,10 +1472,253 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NA_1)
     ASSERT_TRUE(isValueInt(qualityFlag));
     ASSERT_EQ(0, getValueInt(qualityFlag));
 
+    //TODO should be iv = 1 or iv = 0 here?
     qualityFlag = getChild(dataobject, "do_quality_iv");
     ASSERT_NE(nullptr, qualityFlag);
     ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_nt");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
     ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_ov");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_sb");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_test");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    Datapoint* doTs = getChild(dataobject, "do_ts");
+    ASSERT_NE(nullptr, doTs);
+    ASSERT_TRUE(isValueInt(doTs));
+    ASSERT_EQ(1669123796250, getValueInt(doTs));
+
+    Datapoint* doTsSub = getChild(dataobject, "do_ts_sub");
+    ASSERT_EQ(nullptr, doTsSub);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NB_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* mvTyp = new PivotObject("GTIM", "MvTyp");
+
+    ASSERT_NE(nullptr, mvTyp);
+
+    mvTyp->setIdentifier("ID-45-985");
+    mvTyp->setCause(3); /* COT = spont */
+    mvTyp->setMagI(1234);
+    mvTyp->addQuality(false, false, false, true, false, false);
+    mvTyp->addTimestamp(1669123796250, false, false, false);
+
+    Datapoint* dp = mvTyp->toDatapoint();
+
+    delete mvTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TM2"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_ME_NB_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(985, getValueInt(doIoa));
+
+    Datapoint* doCot= getChild(dataobject, "do_cot");
+    ASSERT_NE(nullptr, doCot);
+    ASSERT_TRUE(isValueInt(doCot));
+    ASSERT_EQ(3, getValueInt(doCot));
+
+    Datapoint* doValue= getChild(dataobject, "do_value");
+    ASSERT_NE(nullptr, doValue);
+    ASSERT_TRUE(isValueInt(doValue));
+    ASSERT_EQ(1234, getValueInt(doValue));
+
+    Datapoint* qualityFlag;
+
+    qualityFlag = getChild(dataobject, "do_quality_bl");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    //TODO should be iv = 1 or iv = 0 here?
+    qualityFlag = getChild(dataobject, "do_quality_iv");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_nt");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_ov");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_quality_sb");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    qualityFlag = getChild(dataobject, "do_test");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    Datapoint* doTs = getChild(dataobject, "do_ts");
+    ASSERT_NE(nullptr, doTs);
+    ASSERT_TRUE(isValueInt(doTs));
+    ASSERT_EQ(1669123796250, getValueInt(doTs));
+
+    Datapoint* doTsSub = getChild(dataobject, "do_ts_sub");
+    ASSERT_EQ(nullptr, doTsSub);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NC_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotObject* mvTyp = new PivotObject("GTIM", "MvTyp");
+
+    ASSERT_NE(nullptr, mvTyp);
+
+    mvTyp->setIdentifier("ID-45-986");
+    mvTyp->setCause(3); /* COT = spont */
+    mvTyp->setMagF(23.45);
+    mvTyp->addQuality(false, false, false, true, false, false);
+    mvTyp->addTimestamp(1669123796250, false, false, false);
+
+    Datapoint* dp = mvTyp->toDatapoint();
+
+    delete mvTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TM3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_ME_NC_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(986, getValueInt(doIoa));
+
+    Datapoint* doCot= getChild(dataobject, "do_cot");
+    ASSERT_NE(nullptr, doCot);
+    ASSERT_TRUE(isValueInt(doCot));
+    ASSERT_EQ(3, getValueInt(doCot));
+
+    Datapoint* doValue= getChild(dataobject, "do_value");
+    ASSERT_NE(nullptr, doValue);
+    ASSERT_TRUE(isValueFloat(doValue));
+    ASSERT_NEAR(23.45, getValueFloat(doValue), 0.1f);
+
+    Datapoint* qualityFlag;
+
+    qualityFlag = getChild(dataobject, "do_quality_bl");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
+
+    //TODO should be iv = 1 or iv = 0 here?
+    qualityFlag = getChild(dataobject, "do_quality_iv");
+    ASSERT_NE(nullptr, qualityFlag);
+    ASSERT_TRUE(isValueInt(qualityFlag));
+    ASSERT_EQ(1, getValueInt(qualityFlag));
 
     qualityFlag = getChild(dataobject, "do_quality_nt");
     ASSERT_NE(nullptr, qualityFlag);
