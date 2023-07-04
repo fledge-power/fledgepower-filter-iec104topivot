@@ -700,7 +700,7 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
         addElementWithValue(dataObject, "do_test", (long)(Test() ? 1 : 0));
 
-        addElementWithValue(dataObject, "do_quality_iv", (long)(getValidity() == Validity::GOOD ? 0 : 1));
+        addElementWithValue(dataObject, "do_quality_iv", (long)(getValidity() == Validity::INVALID ? 1 : 0));
 
         addElementWithValue(dataObject, "do_quality_bl", (long)(OperatorBlocked() ? 1 : 0));
 
