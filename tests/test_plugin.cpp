@@ -5,6 +5,8 @@
 #include <filter.h>
 #include <string.h>
 #include <string>
+#include <chrono>
+#include <thread>
 #include <rapidjson/document.h>
 #include "iec104_pivot_object.hpp"
 
@@ -106,6 +108,30 @@ static string exchanged_data = QUOTE({
                                   "typeid":"M_ME_NC_1"
                                }
                             ]
+                        },
+                        {
+                            "label":"IEC104Command",
+                            "pivot_id":"ID-45-988",
+                            "pivot_type":"SpcTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-988",
+                                  "typeid":"C_SC_NA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-996",
+                            "pivot_type":"SpcTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-996",
+                                  "typeid":"C_SC_NA_1"
+                               }
+                            ]
                         }
                     ]
                 }
@@ -122,6 +148,42 @@ static Datapoint* createDatapoint(const std::string& dataname,
 {
     DatapointValue dp_value = DatapointValue(value);
     return new Datapoint(dataname, dp_value);
+}
+
+
+static std::vector<Datapoint*> createCommandObject(const char* type, const char* ca, const char* ioa, const char* cot,
+    const char* negative, const char* se, const char* test, const char* ts, const char* value)
+    {
+    std::vector<Datapoint*> commandObject;
+
+    Datapoint* type1 = createDatapoint("co_type",(std::string)type);
+    commandObject.push_back(type1);
+
+    Datapoint* ca1 = createDatapoint("co_ca",(std::string)ca);
+    commandObject.push_back(ca1);
+
+    Datapoint* ioa1 = createDatapoint("co_ioa",(std::string)ioa);
+    commandObject.push_back(ioa1);
+
+    Datapoint* cot1 = createDatapoint("co_cot",(std::string)cot);
+    commandObject.push_back(cot1);
+
+    Datapoint* negative1 = createDatapoint("co_negative",(std::string)negative);
+    commandObject.push_back(negative1);
+
+    Datapoint* se1 = createDatapoint("co_se",(std::string)se);
+    commandObject.push_back(se1);
+
+    Datapoint* test1 = createDatapoint("co_test",(std::string)test);
+    commandObject.push_back(test1);
+
+    Datapoint* ts1 = createDatapoint("co_ts",(std::string)ts);
+    commandObject.push_back(ts1);
+
+    Datapoint* value1 = createDatapoint("co_value",(std::string) value);
+    commandObject.push_back(value1);
+
+    return commandObject;
 }
 
 template <class T>
@@ -390,6 +452,45 @@ TEST(PivotIEC104Plugin, Plugin_ingest)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, OperationPlugin_ingest_1)
+{
+    outputHandlerCalled = 0;
+
+    vector<vector<Datapoint*>> commandobjects;
+
+    commandobjects.push_back(createCommandObject("C_SC_NA_1", "45", "988", "3", "0", "dct-ctl-wes", "0", "2421512", "1"));
+
+    Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    plugin_ingest(handle, &readingSet);
 
     plugin_shutdown(handle);
 }
@@ -1203,7 +1304,7 @@ TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_NA_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS", "SpsTyp");
 
     ASSERT_NE(nullptr, spsTyp);
 
@@ -1282,7 +1383,7 @@ TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_TB_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS", "SpsTyp");
 
     ASSERT_NE(nullptr, spsTyp);
 
@@ -1392,7 +1493,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NA_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* mvTyp = new PivotObject("GTIM", "MvTyp");
+    PivotDataObject* mvTyp = new PivotDataObject("GTIM", "MvTyp");
 
     ASSERT_NE(nullptr, mvTyp);
 
@@ -1513,7 +1614,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NB_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* mvTyp = new PivotObject("GTIM", "MvTyp");
+    PivotDataObject* mvTyp = new PivotDataObject("GTIM", "MvTyp");
 
     ASSERT_NE(nullptr, mvTyp);
 
@@ -1634,7 +1735,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NC_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* mvTyp = new PivotObject("GTIM", "MvTyp");
+    PivotDataObject* mvTyp = new PivotDataObject("GTIM", "MvTyp");
 
     ASSERT_NE(nullptr, mvTyp);
 
@@ -1755,7 +1856,7 @@ TEST(PivotIEC104Plugin, SpsTyp_withoutTimestamp_to_M_SP_TB_1)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS", "SpsTyp");
 
     ASSERT_NE(nullptr, spsTyp);
 
@@ -1880,7 +1981,7 @@ TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_TB_1_timeInvalid)
 {
     outputHandlerCalled = 0;
 
-    PivotObject* spsTyp = new PivotObject("GTIS", "SpsTyp");
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS", "SpsTyp");
 
     ASSERT_NE(nullptr, spsTyp);
 
@@ -1959,3 +2060,55 @@ TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_TB_1_timeInvalid)
 
     plugin_shutdown(handle);
 }
+
+TEST(PivotIEC104Plugin, OperationSpcTyp_to_C_SC_NA_1)
+{
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC", "SpcTyp");
+
+    ASSERT_NE(nullptr, spcTyp);
+
+    spcTyp->setIdentifier("ID-45-996");
+    spcTyp->setCause(3);
+    spcTyp->setCtlValBool(false);
+    spcTyp->addTimestamp(1691666388);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+}
+
+//{"GTIC":{"ComingFrom":"iec104", "SpcTyp":{"q":{"test":1}, "ctlVal":0, "t":{"SecondSinceEpoch":1669, "FractionOfSecond":1996488}}, "Identifier":"ID-45-988", "Cause":{"stVal":3}, "Confirmation":{"stVal":0}}}
+//{"GTIC":{"ComingFrom":"iec104", "SpcTyp":{"ctlVal":0, "t":{"SecondSinceEpoch":1669, "FractionOfSecond":2013265}, "q":{"test":1}}, "Identifier":"ID-45-996", "Cause":{"stVal":3}, "Confirmation":{"stVal":0}}}

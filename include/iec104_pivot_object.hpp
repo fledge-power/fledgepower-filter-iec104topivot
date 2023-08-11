@@ -59,6 +59,8 @@ private:
     bool m_clockNotSynchronized;
 };
 
+
+
 class PivotObject
 {
 public:
@@ -74,8 +76,53 @@ public:
     {
         SPS,
         DPS,
-        MV
+        MV,
+        SPC,
+        DPC,
+        INC,
+        APC
     } PivotCdc;
+
+    void setIdentifier(const string& identifier);
+    void setCause(int cause);
+    void setConfirmation(bool value);
+    void setTest(bool value);
+
+    Datapoint* toDatapoint() {return m_dp;};
+
+    std::string& getIdentifier() {return m_identifier;};
+    std::string& getComingFrom() {return m_comingFrom;};
+    int getCause() {return m_cause;};
+    bool isConfirmation() {return m_confirmation;};
+    bool Test() {return m_test;};
+
+protected:
+
+    Datapoint* getCdc(Datapoint* dp);
+
+    Datapoint* m_dp;
+    Datapoint* m_ln;
+    Datapoint* m_cdc;
+    PivotClass m_pivotClass;
+    PivotCdc m_pivotCdc;
+
+    std::string m_comingFrom = "iec104";
+    std::string m_identifier;
+    int m_cause = 0;
+    bool m_confirmation = false;
+    bool m_test = false;
+
+    PivotTimestamp* m_timestamp = nullptr;
+
+    bool hasIntVal = true;
+    long intVal;
+    float floatVal;
+};
+
+
+class PivotDataObject : public PivotObject
+{
+public:
 
     typedef enum
     {
@@ -91,20 +138,14 @@ public:
         SUBSTITUTED
     } Source;
 
-    PivotObject(Datapoint* pivotData);
-    PivotObject(const string& pivotLN, const string& valueType);
-    ~PivotObject();
-
-    void setIdentifier(const string& identifier);
-    void setCause(int cause);
+    PivotDataObject(Datapoint* pivotData);
+    PivotDataObject(const string& pivotLN, const string& valueType);
+    ~PivotDataObject();
 
     void setStVal(bool value);
     void setStValStr(const std::string& value);
-
-    void setMagF(float value);
     void setMagI(int value);
-
-    void setConfirmation(bool value);
+    void setMagF(float value);
 
     void addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test);
     void addTimestamp(long ts, bool iv, bool su, bool sub);
@@ -112,14 +153,7 @@ public:
     void addTmOrg(bool substituted);
     void addTmValidity(bool invalid);
 
-    Datapoint* toDatapoint() {return m_dp;};
-
     Datapoint* toIec104DataObject(IEC104PivotDataPoint* exchangeConfig);
-
-    std::string& getIdentifier() {return m_identifier;};
-    std::string& getComingFrom() {return m_comingFrom;};
-    int getCause() {return m_cause;};
-    bool isConfirmation() {return m_isConfirmation;};
 
     Validity getValidity() {return m_validity;};
     Source getSource() {return m_source;};
@@ -133,27 +167,14 @@ public:
     bool Overflow() {return m_overflow;};
 
     bool OperatorBlocked() {return m_operatorBlocked;};
-    bool Test() {return m_test;};
 
     bool IsTimestampSubstituted() {return m_timestampSubstituted;};
     bool IsTimestampInvalid() {return m_timestampInvalid;};
 
 private:
 
-    Datapoint* getCdc(Datapoint* dp);
     void handleDetailQuality(Datapoint* detailQuality);
     void handleQuality(Datapoint* q);
-
-    Datapoint* m_dp;
-    Datapoint* m_ln;
-    Datapoint* m_cdc;
-    PivotClass m_pivotClass;
-    PivotCdc m_pivotCdc;
-
-    std::string m_comingFrom;
-    std::string m_identifier;
-    int m_cause = 0;
-    bool m_isConfirmation = false;
 
     Validity m_validity = Validity::GOOD;
     bool m_badReference = false;
@@ -166,16 +187,33 @@ private:
     bool m_overflow = false;
     Source m_source = Source::PROCESS;
     bool m_operatorBlocked = false;
-    bool m_test = false;
-
-    PivotTimestamp* m_timestamp = nullptr;
 
     bool m_timestampSubstituted = false;
     bool m_timestampInvalid = false;
+};
 
-    bool hasIntVal = true;
-    long intVal;
-    float floatVal;
+class PivotOperationObject : public PivotObject
+{
+public:
+
+    PivotOperationObject(Datapoint* pivotData);
+    PivotOperationObject(const string& pivotLN, const string& valueType);
+    ~PivotOperationObject();
+
+    void setBeh(const string& beh);
+    void setCtlValBool(bool value);
+    void setCtlValStr(const std::string& value);
+    void setCtlValI(int value);
+    void setCtlValF(float value);
+    void addTimestamp(long ts);
+
+    std::vector<Datapoint*> toIec104OperationObject(IEC104PivotDataPoint* exchangeConfig);
+
+    std::string getBeh() {return m_beh;}
+
+private:
+    std::string m_beh = "dct-ctl-wes";
+
 };
 
 #endif /* _IEC104_PIVOT_OBJECT_H */

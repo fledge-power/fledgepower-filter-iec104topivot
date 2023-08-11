@@ -43,12 +43,14 @@ private:
 
     Datapoint* createDp(string name);
 
-    template <class T>
-    Datapoint* createDpWithValue(string name, const T value);
+    Datapoint* convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
 
-    Datapoint* convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertOperationObjectToPivot(std::vector<Datapoint*> sourceDp, IEC104PivotDataPoint* exchangeConfig);
 
-    Datapoint* convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+
+    std::vector<Datapoint*> convertReadingToIEC104OperationObject(Datapoint* datapoints, IEC104PivotDataPoint* exchangeConfig);
+
 
     OUTPUT_HANDLE* m_outHandle;
     OUTPUT_STREAM m_output;
