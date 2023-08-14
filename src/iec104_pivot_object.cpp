@@ -156,6 +156,68 @@ getValueFloat(Datapoint* dp)
 }
 
 void
+PivotTimestamp::setTimeInMs(long ms){
+    uint32_t timeval32 = (uint32_t) (ms/ 1000LL);
+
+    m_valueArray[0] = (timeval32 / 0x1000000 & 0xff);
+    m_valueArray[1] = (timeval32 / 0x10000 & 0xff);
+    m_valueArray[2] = (timeval32 / 0x100 & 0xff);
+    m_valueArray[3] = (timeval32 & 0xff);
+
+    uint32_t remainder = (ms % 1000LL);
+    uint32_t fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+
+    m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+    m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+    m_valueArray[6] = (fractionOfSecond & 0xff);
+}
+
+uint64_t
+PivotTimestamp::getTimeInMs(){
+    uint32_t timeval32;
+
+    timeval32 = m_valueArray[3];
+    timeval32 += m_valueArray[2] * 0x100;
+    timeval32 += m_valueArray[1] * 0x10000;
+    timeval32 += m_valueArray[0] * 0x1000000;
+
+    uint32_t fractionOfSecond = 0;
+
+    fractionOfSecond = (m_valueArray[4] << 16);
+    fractionOfSecond += (m_valueArray[5] << 8);
+    fractionOfSecond += (m_valueArray[6]);
+
+    uint32_t remainder = fractionOfSecond / 16777;
+
+    uint64_t msVal = (timeval32 * 1000LL) + remainder;
+
+    return (uint64_t) msVal;
+}
+
+int
+PivotTimestamp::FractionOfSecond(){
+    uint32_t fractionOfSecond = 0;
+
+    fractionOfSecond = (m_valueArray[4] << 16);
+    fractionOfSecond += (m_valueArray[5] << 8);
+    fractionOfSecond += (m_valueArray[6]);
+
+    return fractionOfSecond;
+}
+
+int
+PivotTimestamp::SecondSinceEpoch(){
+    int32_t timeval32;
+
+    timeval32 = m_valueArray[3];
+    timeval32 += m_valueArray[2] * 0x100;
+    timeval32 += m_valueArray[1] * 0x10000;
+    timeval32 += m_valueArray[0] * 0x1000000;
+
+    return timeval32;
+}
+
+void
 PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
 {
     DatapointValue& dpv = timeQuality->getData();
@@ -194,6 +256,7 @@ PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
 PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
 {
     DatapointValue& dpv = timestampData->getData();
+    m_valueArray = new uint8_t[7];
 
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
@@ -202,16 +265,48 @@ PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "SecondSinceEpoch") {
-                m_secondSinceEpoch = getValueInt(child);
+                uint32_t secondSinceEpoch = getValueInt(child);
+
+                m_valueArray[0] = (secondSinceEpoch / 0x1000000 & 0xff);
+                m_valueArray[1] = (secondSinceEpoch / 0x10000 & 0xff);
+                m_valueArray[2] = (secondSinceEpoch / 0x100 & 0xff);
+                m_valueArray[3] = (secondSinceEpoch & 0xff);
             }
             else if (child->getName() == "FractionOfSecond") {
-                m_fractionOfSecond = getValueInt(child);
+                uint32_t fractionOfSecond = getValueInt(child);
+
+                m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+                m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+                m_valueArray[6] = (fractionOfSecond & 0xff);
             }
             else if (child->getName() == "TimeQuality") {
                 handleTimeQuality(child);
             }
         }
     }
+}
+
+PivotTimestamp::PivotTimestamp(long ms)
+{
+    m_valueArray = new uint8_t[7];
+    uint32_t timeval32 = (uint32_t) (ms/ 1000LL);
+
+    m_valueArray[0] = (timeval32 / 0x1000000 & 0xff);
+    m_valueArray[1] = (timeval32 / 0x10000 & 0xff);
+    m_valueArray[2] = (timeval32 / 0x100 & 0xff);
+    m_valueArray[3] = (timeval32 & 0xff);
+
+    uint32_t remainder = (ms % 1000LL);
+    uint32_t fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+
+    m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+    m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+    m_valueArray[6] = (fractionOfSecond & 0xff);
+}
+
+PivotTimestamp::~PivotTimestamp()
+{
+    delete[] m_valueArray;
 }
 
 uint64_t
@@ -877,11 +972,10 @@ PivotDataObject::addTimestamp(long ts, bool iv, bool su, bool sub)
 {
     Datapoint* t = addElement(m_cdc, "t");
 
-    long remainder = (ts % 1000LL);
-    long fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+    m_timestamp = new PivotTimestamp(ts);
 
-    addElementWithValue(t, "SecondSinceEpoch", ts/1000);
-    addElementWithValue(t, "FractionOfSecond", fractionOfSecond);
+    addElementWithValue(t, "SecondSinceEpoch",(long) m_timestamp->SecondSinceEpoch());
+    addElementWithValue(t, "FractionOfSecond", (long) m_timestamp->FractionOfSecond());
 
     Datapoint* timeQuality = addElement(t, "TimeQuality");
 
@@ -895,11 +989,10 @@ PivotOperationObject::addTimestamp(long ts)
 {
     Datapoint* t = addElement(m_cdc, "t");
 
-    long remainder = (ts % 1000LL);
-    long fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+    m_timestamp = new PivotTimestamp(ts);
 
-    addElementWithValue(t, "SecondSinceEpoch", ts/1000);
-    addElementWithValue(t, "FractionOfSecond", fractionOfSecond);
+    addElementWithValue(t, "SecondSinceEpoch",(long) m_timestamp->SecondSinceEpoch());
+    addElementWithValue(t, "FractionOfSecond", (long) m_timestamp->FractionOfSecond());
 }
 
 Datapoint*
@@ -938,9 +1031,7 @@ PivotDataObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
         }
 
         if (m_timestamp) {
-            long msPart = ((long)(m_timestamp->FractionOfSecond()) * 1000L) / 16777216L;
-
-            addElementWithValue(dataObject, "do_ts", ((long)(m_timestamp->SecondSinceEpoch()) * 1000L) + msPart);
+            addElementWithValue(dataObject, "do_ts", ((long)(uint64_t)m_timestamp->getTimeInMs()));
 
             bool timeInvalid = m_timestamp->ClockFailure() || m_timestamp->ClockNotSynchronized();
 
@@ -994,9 +1085,7 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
     long time;
 
     if (m_timestamp) {
-            long msPart = ((long)(m_timestamp->FractionOfSecond()) * 1000LL) / 16777216LL;
-
-            time = (long) ((m_timestamp->SecondSinceEpoch()) * 1000L + msPart);
+        time = m_timestamp->getTimeInMs();
     }
 
     else{

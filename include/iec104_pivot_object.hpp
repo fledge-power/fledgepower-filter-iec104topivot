@@ -35,9 +35,14 @@ class PivotTimestamp
 {
 public:
     PivotTimestamp(Datapoint* timestampData);
+    PivotTimestamp(long ms);
+    ~PivotTimestamp();
 
-    int SecondSinceEpoch() {return m_secondSinceEpoch;};
-    int FractionOfSecond() {return m_fractionOfSecond;};
+    void setTimeInMs(long ms);
+
+    int SecondSinceEpoch();
+    int FractionOfSecond();
+    uint64_t getTimeInMs();
 
     bool ClockFailure() {return m_clockFailure;};
     bool LeapSecondKnown() {return m_leapSecondKnown;};
@@ -49,6 +54,8 @@ public:
 private:
 
     void handleTimeQuality(Datapoint* timeQuality);
+
+    uint8_t* m_valueArray;
 
     int m_secondSinceEpoch;
     int m_fractionOfSecond;

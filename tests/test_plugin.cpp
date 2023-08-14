@@ -280,7 +280,7 @@ getChild(Datapoint* dp, const string& name)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == name) {
                 childDp = child;
