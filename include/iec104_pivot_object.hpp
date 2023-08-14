@@ -165,7 +165,6 @@ public:
     bool Oscillatory() {return m_oscillatory;};
     bool OutOfRange() {return m_outOfRange;};
     bool Overflow() {return m_overflow;};
-
     bool OperatorBlocked() {return m_operatorBlocked;};
 
     bool IsTimestampSubstituted() {return m_timestampSubstituted;};

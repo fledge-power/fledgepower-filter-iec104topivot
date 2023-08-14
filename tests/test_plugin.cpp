@@ -280,7 +280,7 @@ getChild(Datapoint* dp, const string& name)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == name) {
                 childDp = child;
@@ -490,15 +490,6 @@ TEST(PivotIEC104Plugin, OperationPlugin_ingest_1)
 
     ASSERT_EQ(1, outputHandlerCalled);
 
-    plugin_ingest(handle, &readingSet);
-        plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
     plugin_ingest(handle, &readingSet);
 
 
@@ -2117,11 +2108,16 @@ TEST(PivotIEC104Plugin, OperationSpcTyp_to_C_SC_NA_1)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-        plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
-    plugin_ingest(handle, &readingSet);
 
 
+}
+
+TEST(PivotIEC104Plugin, OperationDataObjectToPivotTStrue) {
+    outputHandlerCalled = 0;
+
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS","SpsTyp");
+
+    ASSERT_NE(nullptr,spsTyp);
 }
 
 //{"GTIC":{"ComingFrom":"iec104", "SpcTyp":{"q":{"test":1}, "ctlVal":0, "t":{"SecondSinceEpoch":1669, "FractionOfSecond":1996488}}, "Identifier":"ID-45-988", "Cause":{"stVal":3}, "Confirmation":{"stVal":0}}}
