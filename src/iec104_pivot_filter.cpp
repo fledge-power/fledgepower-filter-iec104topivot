@@ -431,6 +431,13 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
     return convertedDatapoint;
 }
 
+bool
+is_int(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
 
 Datapoint*
 IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoints)
@@ -496,20 +503,36 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
                     hasCoType = true;
                 }
                 else {
-                    Logger::getLogger()->warn("Input type coes not match configured type for %s", exchangeConfig->getLabel().c_str());
+                    Logger::getLogger()->warn("Input type does not match configured type for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
                 }
             }
         }
         else if ((hasCoCot == false) && (dp->getName() == "co_cot")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                coCot =  stoi(dp->getData().toStringValue());
-                hasCoCot = true;
+            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())) {
+                int value = stoi(dp->getData().toStringValue());
+
+                if(value >= 0 && value <=63){
+                    coCot =  value;
+                    hasCoCot = true;
+                }
+                else{
+                    Logger::getLogger()->error("COT value out of range for %s-%s", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
+                }
+            }
+            else {
+                Logger::getLogger()->error("COT data type invalid for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
+                printf("COT data type invalid for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
         else if ((hasSe == false) && (dp->getName() == "co_se")) {
             if (dp->getData().getType() == DatapointValue::T_STRING) {
                 coSe =  dp->getData().toStringValue();
-                if(coSe!="dct-ctl-wes")hasSe = true;
+
+                if(coSe!="dct-ctl-wes")
+                    hasSe = true;
+            }
+            else {
+                Logger::getLogger()->warn("SE input data type invalid for %s-%s , defaulting to dct-ctl-wes", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
 
@@ -519,22 +542,30 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         }
 
         else if ((hasCoTs == false) && (dp->getName() == "co_ts")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                string tsString = dp->getData().toStringValue();
-                if(tsString != "") {
-                    hasCoTs = true;
-                    coTs =  stol(tsString);
-                }
+            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())){
+                hasCoTs = true;
+                coTs =  stol(dp->getData().toStringValue());
+            }
+            else {
+                if(dp->getData().toStringValue()!= "")
+                    Logger::getLogger()->error("Timestamp input data type invalid for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
 
         else if ((hasCoTest == false) && (dp->getName() == "co_test")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                int test =  stoi(dp->getData().toStringValue());
-                if (test > 0){
+            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())){
+                int value = stoi(dp->getData().toStringValue());
+
+                if (value == 1){
                     coTest = true;
-                    hasCoTest= true;
+                    hasCoTest = true;
                 }
+                else if(value != 0 && value != 1){
+                    Logger::getLogger()->warn("Test value out of range for %s-%s , defaulting to false", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
+                }
+            }
+            else {
+                Logger::getLogger()->warn("Test value input data type invalid for %s-%s , defaulting to false", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
 
@@ -549,25 +580,33 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         }
 
         else if ((hasCoNegative == false) && (dp->getName() == "co_negative")) {
-            if ((dp->getData().getType() == DatapointValue::T_STRING) && (stoi(dp->getData().toStringValue()) > 0)) {
-                coNegative = true;
-                hasCoNegative = true;
+            if ((dp->getData().getType() == DatapointValue::T_STRING) && is_int(dp->getData().toStringValue())) {
+                int value = stoi(dp->getData().toStringValue());
+
+                if (value == 1){
+                    coNegative = true;
+                    hasCoNegative = true;
+                }
+                else if(value != 0 && value != 1){
+                    Logger::getLogger()->warn("Negative value out of range for %s-%s , defaulting to false", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
+                }
+            }
+            else {
+                Logger::getLogger()->warn("Negative value input data type invalid for %s-%s , defaulting to false", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
     }
 
-
     if(!hasCoTs && (coType == "C_SC_TA_1" || coType == "C_DC_TA_1" || coType == "C_SE_TB_1" || coType == "C_SE_TC_1"))
     {
-              Logger::getLogger()->error("Command has ASDU type with timestamp, but no timestamp was received -> ignore", exchangeConfig->getLabel().c_str());
-              return convertedDatapoint;
+        Logger::getLogger()->error("Command has ASDU type with timestamp, but no timestamp was received -> ignore");
+        return convertedDatapoint;
     }
 
     if (comingFromIec104 == false) {
         Logger::getLogger()->warn("data_object for %s is not from IEC 104 plugin -> ignore", exchangeConfig->getLabel().c_str());
     }
 
-    //NOTE: when coValue is missing it could be an ACK!
     if (comingFromIec104 && hasCoType && hasCoCot) {
 
         if (coType == "C_SC_NA_1" || coType == "C_SC_TA_1")
@@ -709,11 +748,18 @@ IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
 
     try {
         PivotOperationObject pivotOperationObject(sourceDp);
-        convertedDatapoints = pivotOperationObject.toIec104OperationObject(m_config.getExchangeDefinitionsByPivotId(pivotOperationObject.getIdentifier()));
+        IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByPivotId(pivotOperationObject.getIdentifier());
+
+        if(!exchangeConfig){
+            Logger::getLogger()->error("Pivot ID not in exchangeData");
+        }
+        else{
+            convertedDatapoints = pivotOperationObject.toIec104OperationObject(exchangeConfig);
+        }
     }
     catch (PivotObjectException& e)
     {
-        Logger::getLogger()->error("Failed to convert pivot object: %s", e.getContext().c_str());
+        Logger::getLogger()->error("Failed to convert pivot operation object: %s", e.getContext().c_str());
     }
 
     return convertedDatapoints;
@@ -746,7 +792,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                 Datapoint* convertedOperation = convertOperationObjectToPivot(datapoints);
 
                 if (!convertedOperation) {
-                    Logger::getLogger()->error("Failed to convert object");
+                    Logger::getLogger()->error("Failed to convert IEC command object");
                 }
                 else{
                     convertedDatapoints.push_back(convertedOperation);
@@ -759,7 +805,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                 std::vector<Datapoint*> convertedReadingDatapoints = convertReadingToIEC104OperationObject(datapoints[0]);
 
                 if (convertedReadingDatapoints.empty()) {
-                    Logger::getLogger()->error("Failed to convert object");
+                    Logger::getLogger()->error("Failed to convert Pivot operation object");
                 }
 
                 for(Datapoint* dp : convertedReadingDatapoints)
