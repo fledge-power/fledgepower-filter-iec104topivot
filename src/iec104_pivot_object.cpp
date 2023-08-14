@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include "iec104_pivot_object.hpp"
@@ -78,7 +78,7 @@ getChild(Datapoint* dp, const string& name)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == name) {
                 childDp = child;
@@ -163,7 +163,7 @@ PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "clockFailure") {
@@ -198,7 +198,7 @@ PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "SecondSinceEpoch") {
@@ -233,7 +233,7 @@ PivotObject::getCdc(Datapoint* dp)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == "SpsTyp") {
                 cdcDp = child;
@@ -283,7 +283,7 @@ PivotDataObject::handleDetailQuality(Datapoint* detailQuality)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "badReference") {
@@ -345,7 +345,7 @@ PivotDataObject::handleQuality(Datapoint* q)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == "Validity") {
                 string validityStr = getValueStr(child);
@@ -366,7 +366,7 @@ PivotDataObject::handleQuality(Datapoint* q)
                 }
             }
             else if (child->getName() == "Source") {
-                
+
                 string sourceStr = getValueStr(child);
 
                 if (sourceStr != "process") {
@@ -410,7 +410,7 @@ PivotDataObject::PivotDataObject(Datapoint* pivotData)
 
         if (dpv.getType() == DatapointValue::T_DP_DICT) {
             std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
             for (Datapoint* child : *datapoints) {
                 if (child->getName() == "GTIS") {
                     m_pivotClass = PivotClass::GTIS;
@@ -823,7 +823,7 @@ PivotDataObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool te
         if (ov)
             addElementWithValue(detailQuality, "overflow", (long)1);
     }
-    
+
     if (sb) {
         addElementWithValue(q, "Source", "substituted");
     }
@@ -949,7 +949,7 @@ PivotDataObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
             }
 
             //addElementWithValue(dataObject, "do_ts_su", (long)0);
-            
+
             if (IsTimestampSubstituted()) {
                 addElementWithValue(dataObject, "do_ts_sub", (long)1);
             }
@@ -968,7 +968,9 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
 {
     std::vector<Datapoint*> commandObject;
 
-    Datapoint* type = createDpWithValue("co_type",(std::string)exchangeConfig->getTypeId());
+    string asduType = exchangeConfig->getTypeId();
+
+    Datapoint* type = createDpWithValue("co_type",(std::string) asduType);
     commandObject.push_back(type);
 
     Datapoint* ca = createDpWithValue("co_ca",(std::string)to_string(exchangeConfig->getCA()));
@@ -980,7 +982,7 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
     Datapoint* cot = createDpWithValue("co_cot",(std::string)to_string(getCause()));
     commandObject.push_back(cot);
 
-    Datapoint* negative = createDpWithValue("co_negative",(std::string)(to_string(isConfirmation()))); 
+    Datapoint* negative = createDpWithValue("co_negative",(std::string)(to_string(isConfirmation())));
     commandObject.push_back(negative);
 
     Datapoint* se = createDpWithValue("co_se",(std::string)getBeh());
@@ -998,10 +1000,12 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
     }
 
     else{
-        time = (long)PivotTimestamp::GetCurrentTimeInMs();
+        time = 0;
     }
 
-    Datapoint* ts = createDpWithValue("co_ts",(std::string) to_string(time));
+    bool hasTime = asduType.find('T') != std::string::npos && time!= 0;
+
+    Datapoint* ts = createDpWithValue("co_ts",(std::string) (hasTime ? to_string(time) : ""));
     commandObject.push_back(ts);
 
     Datapoint* value;

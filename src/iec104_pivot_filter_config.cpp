@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include <rapidjson/document.h>
@@ -97,9 +97,9 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
         if (!datapoint.HasMember("protocols") || !datapoint["protocols"].IsArray()) return;
 
         for (const Value& protocol : datapoint["protocols"].GetArray()) {
-            
+
             if (!protocol.HasMember("name") || !protocol["name"].IsString()) return;
-            
+
             string protocolName = protocol["name"].GetString();
 
             if (protocolName == PROTOCOL_IEC104)
@@ -127,7 +127,9 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
                     IEC104PivotDataPoint* newDp = new IEC104PivotDataPoint(label, pivotId, pivotType, typeIdStr, ca, ioa, alternateMappingRule);
 
-                    m_exchangeDefinitions[label] = newDp;
+                    m_exchangeDefinitionsLabel[label] = newDp;
+                    m_exchangeDefinitionsAddress[address] = newDp;
+                    m_exchangeDefinitionsPivotId[pivotId] = newDp;
                 }
             }
         }
@@ -140,9 +142,9 @@ void
 IEC104PivotConfig::deleteExchangeDefinitions()
 {
     //release elements of map
-    auto it = m_exchangeDefinitions.begin();
+    auto it = m_exchangeDefinitionsLabel.begin();
 
-    while (it != m_exchangeDefinitions.end()) {
+    while (it != m_exchangeDefinitionsLabel.end()) {
         IEC104PivotDataPoint* dp = it->second;
 
         delete dp;
@@ -150,5 +152,9 @@ IEC104PivotConfig::deleteExchangeDefinitions()
         it++;
     }
 
-    m_exchangeDefinitions.clear();
+    m_exchangeDefinitionsLabel.clear();
+
+    m_exchangeDefinitionsAddress.clear();
+
+    m_exchangeDefinitionsPivotId.clear();
 }

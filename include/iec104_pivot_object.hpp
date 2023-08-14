@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #ifndef _IEC104_PIVOT_OBJECT_H
@@ -20,7 +20,7 @@
 using namespace std;
 
 class PivotObjectException : public std::exception //NOSONAR
-{     
+{
  public:
     explicit PivotObjectException(const std::string& context):
         m_context(context) {}
@@ -35,10 +35,10 @@ class PivotTimestamp
 {
 public:
     PivotTimestamp(Datapoint* timestampData);
-    
+
     int SecondSinceEpoch() {return m_secondSinceEpoch;};
     int FractionOfSecond() {return m_fractionOfSecond;};
-    
+
     bool ClockFailure() {return m_clockFailure;};
     bool LeapSecondKnown() {return m_leapSecondKnown;};
     bool ClockNotSynchronized() {return m_clockNotSynchronized;};
@@ -52,7 +52,7 @@ private:
 
     int m_secondSinceEpoch;
     int m_fractionOfSecond;
-    
+
     int m_timeAccuracy;
     bool m_clockFailure;
     bool m_leapSecondKnown;

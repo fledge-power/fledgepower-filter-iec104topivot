@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include <plugin_api.h>

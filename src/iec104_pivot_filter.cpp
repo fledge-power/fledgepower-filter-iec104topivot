@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include "iec104_pivot_filter.hpp"
@@ -57,7 +57,7 @@ checkTypeMatch(std::string& incomingType, IEC104PivotDataPoint* exchangeConfig)
         if (exchangeConfig->getTypeId() == "M_ME_NC_1" || exchangeConfig->getTypeId() == "M_ME_TF_1")
             return true;
     }
-    else if (incomingType == "C_SC_NA_1" || incomingType == "C_SC_TA_1") { 
+    else if (incomingType == "C_SC_NA_1" || incomingType == "C_SC_TA_1") {
         if (exchangeConfig->getTypeId() == "C_SC_NA_1" || exchangeConfig->getTypeId() == "C_SC_TA_1")
             return true;
     }
@@ -65,11 +65,11 @@ checkTypeMatch(std::string& incomingType, IEC104PivotDataPoint* exchangeConfig)
         if (exchangeConfig->getTypeId() == "C_DC_NA_1" || exchangeConfig->getTypeId() == "C_DC_TA_1")
             return true;
     }
-    else if (incomingType == "C_SE_NB_1" || incomingType == "C_SE_TB_1") { 
+    else if (incomingType == "C_SE_NB_1" || incomingType == "C_SE_TB_1") {
         if (exchangeConfig->getTypeId() == "C_SE_NB_1" || exchangeConfig->getTypeId() == "C_SE_TB_1")
             return true;
     }
-    else if (incomingType == "C_SE_NC_1" || incomingType == "C_SE_TC_1") { 
+    else if (incomingType == "C_SE_NC_1" || incomingType == "C_SE_TC_1") {
         if (exchangeConfig->getTypeId() == "C_SE_NC_1" || exchangeConfig->getTypeId() == "C_SE_TC_1")
             return true;
     }
@@ -187,7 +187,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doQualityIv = true;
             }
-           
+
             hasDoQualityIv = true;
         }
         else if ((hasDoQualityBl == false) && (dp->getName() == "do_quality_bl")) {
@@ -195,7 +195,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doQualityBl = true;
             }
-           
+
             hasDoQualityBl = true;
         }
         else if ((hasDoQualityOv == false) && (dp->getName() == "do_quality_ov")) {
@@ -203,7 +203,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doQualityOv = true;
             }
-           
+
             hasDoQualityOv = true;
         }
         else if ((hasDoQualitySb == false) && (dp->getName() == "do_quality_sb")) {
@@ -211,7 +211,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doQualitySb = true;
             }
-           
+
             hasDoQualitySb = true;
         }
         else if ((hasDoQualityNt == false) && (dp->getName() == "do_quality_nt")) {
@@ -219,7 +219,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doQualityNt = true;
             }
-           
+
             hasDoQualityNt = true;
         }
         else if ((hasDoTs == false) && (dp->getName() == "do_ts")) {
@@ -233,7 +233,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doTsIv = true;
             }
-           
+
             hasDoTsIv = true;
         }
         else if ((hasDoTsSu == false) && (dp->getName() == "do_ts_su")) {
@@ -241,7 +241,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doTsSu = true;
             }
-           
+
             hasDoTsSu = true;
         }
         else if ((hasDoTsSub == false) && (dp->getName() == "do_ts_sub")) {
@@ -249,7 +249,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doTsSub = true;
             }
-           
+
             hasDoTsSub = true;
         }
         else if ((hasDoTest == false) && (dp->getName() == "do_test")) {
@@ -257,7 +257,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 if (dp->getData().toInt() > 0)
                     doTest = true;
             }
-           
+
             hasDoTest= true;
         }
         else if ((hasComingFrom == false) && (dp->getName() == "do_comingfrom")) {
@@ -286,13 +286,13 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
 
     if (comingFromIec104 && hasDoType && hasDoCot) {
 
-        if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1") 
+        if (doType == "M_SP_NA_1" || doType == "M_SP_TB_1")
         {
             PivotDataObject pivot("GTIS", "SpsTyp");
 
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
-            
+
             if (doValue) {
                 bool spsValue = false;
 
@@ -311,18 +311,18 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.addQuality(doQualityBl, doQualityIv, doQualityNt, doQualityOv, doQualitySb, doTest);
 
             appendTimestampDataObject(pivot, hasDoTs, doTs, doTsIv, doTsSu, doTsSub);
-            
+
             convertedDatapoint = pivot.toDatapoint();
         }
-        else if (doType == "M_DP_NA_1" || doType == "M_DP_TB_1") 
+        else if (doType == "M_DP_NA_1" || doType == "M_DP_TB_1")
         {
             PivotDataObject pivot("GTIS", "DpsTyp");
 
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
-            
+
             if (doValue) {
-                 
+
                 if (doValue->getData().getType() == DatapointValue::T_INTEGER) {
                     int dpsValue = doValue->getData().toInt();
 
@@ -433,7 +433,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
 
 
 Datapoint*
-IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoints, IEC104PivotDataPoint* exchangeConfig)
+IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoints)
 {
     Datapoint* convertedDatapoint = nullptr;
 
@@ -461,7 +461,30 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
     bool hasCoNegative = false;
     bool coNegative = false;
 
+    string coIoa = "";
+    string coCa = "";
+
     Datapoint* coValue = nullptr;
+
+    for(Datapoint* dp : datapoints){
+        if ((dp->getName() == "co_ioa")) {
+            if (dp->getData().getType() == DatapointValue::T_STRING) {
+                coIoa =  dp->getData().toStringValue();
+            }
+        }
+        else if ((dp->getName() == "co_ca")) {
+            if (dp->getData().getType() == DatapointValue::T_STRING) {
+                coCa =  dp->getData().toStringValue();
+            }
+        }
+    }
+
+    IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByAddress(coCa+"-"+coIoa);
+
+    if(!exchangeConfig){
+        Logger::getLogger()->error("CA and IOA not in exchange data");
+        return convertedDatapoint;
+    }
 
     for (Datapoint* dp : datapoints)
     {
@@ -497,8 +520,11 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
 
         else if ((hasCoTs == false) && (dp->getName() == "co_ts")) {
             if (dp->getData().getType() == DatapointValue::T_STRING) {
-                coTs =  stol(dp->getData().toStringValue());
-                hasCoTs = true;
+                string tsString = dp->getData().toStringValue();
+                if(tsString != "") {
+                    hasCoTs = true;
+                    coTs =  stol(tsString);
+                }
             }
         }
 
@@ -510,12 +536,6 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
                     hasCoTest= true;
                 }
             }
-        }
-
-        if(!hasCoTs && (coType == "C_SC_TA_1" || coType == "C_DC_TA_1" || coType == "C_SE_TB_1" || coType == "C_SE_TC_1"))
-        {
-              Logger::getLogger()->error("Command has ASDU type with timestamp, but no timestamp was received -> ignore", exchangeConfig->getLabel().c_str());
-              return convertedDatapoint;
         }
 
         else if ((hasComingFrom == false) && (dp->getName() == "co_comingfrom")) {
@@ -534,6 +554,13 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
                 hasCoNegative = true;
             }
         }
+    }
+
+
+    if(!hasCoTs && (coType == "C_SC_TA_1" || coType == "C_DC_TA_1" || coType == "C_SE_TB_1" || coType == "C_SE_TC_1"))
+    {
+              Logger::getLogger()->error("Command has ASDU type with timestamp, but no timestamp was received -> ignore", exchangeConfig->getLabel().c_str());
+              return convertedDatapoint;
     }
 
     if (comingFromIec104 == false) {
@@ -583,7 +610,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             if(hasCoNegative)pivot.setConfirmation(coNegative);
 
             if (coValue) {
-                 
+
                 if (coValue->getData().getType() == DatapointValue::T_STRING) {
                     int dpsValue = stoi(coValue->getData().toStringValue());
 
@@ -676,13 +703,13 @@ IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC10
 }
 
 std::vector<Datapoint*>
-IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
+IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
 {
     std::vector<Datapoint*> convertedDatapoints;
 
     try {
         PivotOperationObject pivotOperationObject(sourceDp);
-        convertedDatapoints = pivotOperationObject.toIec104OperationObject(exchangeConfig);
+        convertedDatapoints = pivotOperationObject.toIec104OperationObject(m_config.getExchangeDefinitionsByPivotId(pivotOperationObject.getIdentifier()));
     }
     catch (PivotObjectException& e)
     {
@@ -706,11 +733,6 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
         std::string assetName = reading->getAssetName();
 
-        auto exchangeData = m_config.getExchangeDefinitions();
-
-        if (exchangeData.find(assetName) != exchangeData.end())
-        {
-            IEC104PivotDataPoint* exchangeConfig = exchangeData[assetName];
 
             std::vector<Datapoint*>& datapoints = reading->getReadingData();
 
@@ -721,7 +743,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             //Logger::getLogger()->info("original Reading: (%s)", reading->toJSON().c_str());
 
             if(assetName == "IEC104Command"){
-                Datapoint* convertedOperation = convertOperationObjectToPivot(datapoints,exchangeConfig);
+                Datapoint* convertedOperation = convertOperationObjectToPivot(datapoints);
 
                 if (!convertedOperation) {
                     Logger::getLogger()->error("Failed to convert object");
@@ -734,7 +756,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             }
 
             else if(assetName == "PivotCommand"){
-                std::vector<Datapoint*> convertedReadingDatapoints = convertReadingToIEC104OperationObject(datapoints[0],exchangeConfig);
+                std::vector<Datapoint*> convertedReadingDatapoints = convertReadingToIEC104OperationObject(datapoints[0]);
 
                 if (convertedReadingDatapoints.empty()) {
                     Logger::getLogger()->error("Failed to convert object");
@@ -747,6 +769,8 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             }
 
             else{
+                IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByLabel(assetName);
+
                 for (Datapoint* dp : datapoints) {
                     printf("DATAPOINT: (%s)\n", dp->toJSONProperty().c_str());
                     if (dp->getName() == "data_object") {
@@ -759,7 +783,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                           Logger::getLogger()->error("Failed to convert object");
                         }
                     }
-                    
+
                     else if (dp->getName() == "PIVOT") {
                         Datapoint* convertedDp = convertDatapointToIEC104DataObject(dp, exchangeConfig);
 
@@ -772,6 +796,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                     }
                 }
             }
+
             reading->removeAllDatapoints();
 
             for (Datapoint* convertedDatapoint : convertedDatapoints) {
@@ -780,11 +805,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
             //printf("converted Reading: (%s)\n", reading->toJSON().c_str());
             //Logger::getLogger()->info("converted Reading: (%s)", reading->toJSON().c_str());
-        }
-        else {
-            printf("Asset (%s) not found in exchanged data\n", assetName.c_str());
-            Logger::getLogger()->error("Asset (%s) not found in exchanged data", assetName.c_str());
-        }
+
 
         if (reading->getReadingData().size() == 0) {
             readIt = readings->erase(readIt);
@@ -802,7 +823,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
     }
 }
 
-void 
+void
 IEC104PivotFilter::reconfigure(ConfigCategory* config)
 {
     Logger::getLogger()->debug("(re)configure called");

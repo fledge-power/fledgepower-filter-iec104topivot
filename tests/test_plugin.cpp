@@ -117,18 +117,18 @@ static string exchanged_data = QUOTE({
                                {
                                   "name":"iec104",
                                   "address":"45-988",
-                                  "typeid":"C_SC_NA_1"
+                                  "typeid":"C_SC_TA_1"
                                }
                             ]
                         },
                         {
                             "label":"PivotCommand",
-                            "pivot_id":"ID-45-996",
+                            "pivot_id":"ID-45-998",
                             "pivot_type":"SpcTyp",
                             "protocols":[
                                {
                                   "name":"iec104",
-                                  "address":"45-996",
+                                  "address":"45-998",
                                   "typeid":"C_SC_NA_1"
                                }
                             ]
@@ -462,7 +462,7 @@ TEST(PivotIEC104Plugin, OperationPlugin_ingest_1)
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_NA_1", "45", "988", "3", "0", "dct-ctl-wes", "0", "2421512", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "988", "3", "0", "dct-ctl-wes", "0", "2421512", "1"));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -491,6 +491,16 @@ TEST(PivotIEC104Plugin, OperationPlugin_ingest_1)
     ASSERT_EQ(1, outputHandlerCalled);
 
     plugin_ingest(handle, &readingSet);
+        plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+
 
     plugin_shutdown(handle);
 }
@@ -832,6 +842,7 @@ TEST(PivotIEC104Plugin, M_DP_NA_1)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
+
 
     ASSERT_NE(nullptr, lastReading);
 
@@ -2069,10 +2080,9 @@ TEST(PivotIEC104Plugin, OperationSpcTyp_to_C_SC_NA_1)
 
     ASSERT_NE(nullptr, spcTyp);
 
-    spcTyp->setIdentifier("ID-45-996");
+    spcTyp->setIdentifier("ID-45-998");
     spcTyp->setCause(3);
     spcTyp->setCtlValBool(false);
-    spcTyp->addTimestamp(1691666388);
 
     Datapoint* dp = spcTyp->toDatapoint();
 
@@ -2107,6 +2117,10 @@ TEST(PivotIEC104Plugin, OperationSpcTyp_to_C_SC_NA_1)
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
+        plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+    plugin_ingest(handle, &readingSet);
+
 
 }
 

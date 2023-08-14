@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #ifndef PIVOT_IEC104_CONFIG_H
@@ -50,16 +50,23 @@ public:
 
     void importExchangeConfig(const string& exchangeConfig);
 
-    std::map<std::string, IEC104PivotDataPoint*>& getExchangeDefinitions() {return m_exchangeDefinitions;};
+    IEC104PivotDataPoint* getExchangeDefinitionsByLabel(std::string label) {return m_exchangeDefinitionsLabel[label];};
+    IEC104PivotDataPoint* getExchangeDefinitionsByAddress(std::string address) {return m_exchangeDefinitionsAddress[address];};
+    IEC104PivotDataPoint* getExchangeDefinitionsByPivotId(std::string pivotid) {return m_exchangeDefinitionsPivotId[pivotid];};
 
 private:
 
     void deleteExchangeDefinitions();
-    
+
     bool m_exchangeConfigComplete;
 
     /* list of exchange data points -> the label is the key */
-    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitions;
+    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsLabel;
+    /* list of exchange data points -> the address is the key */
+    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsAddress;
+    /* list of exchange data points -> the pivot id is the key */
+    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsPivotId;
+
 };
 
 #endif /* PIVOT_IEC104_CONFIG_H */
