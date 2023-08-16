@@ -129,7 +129,91 @@ static string exchanged_data = QUOTE({
                                {
                                   "name":"iec104",
                                   "address":"45-998",
+                                  "typeid":"C_SC_TA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-999",
+                            "pivot_type":"SpcTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-999",
                                   "typeid":"C_SC_NA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-888",
+                            "pivot_type":"DpcTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-888",
+                                  "typeid":"C_DC_NA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-889",
+                            "pivot_type":"DpcTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-889",
+                                  "typeid":"C_DC_TA_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-890",
+                            "pivot_type":"IncTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-890",
+                                  "typeid":"C_SE_NB_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-891",
+                            "pivot_type":"IncTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-891",
+                                  "typeid":"C_SE_TB_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-892",
+                            "pivot_type":"AcpTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-892",
+                                  "typeid":"C_SE_NC_1"
+                               }
+                            ]
+                        },
+                        {
+                            "label":"PivotCommand",
+                            "pivot_id":"ID-45-893",
+                            "pivot_type":"AcpTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-892",
+                                  "typeid":"C_SE_TC_1"
                                }
                             ]
                         }
@@ -270,6 +354,13 @@ getDatapoint(Reading* reading, const string& key)
 
     return nullptr;
 }
+static std::vector<Datapoint*>
+getDatapoints(Reading* reading)
+{
+    std::vector<Datapoint*>& datapoints = reading->getReadingData();
+    return datapoints;
+}
+
 
 static Datapoint*
 getChild(Datapoint* dp, const string& name)
@@ -290,6 +381,14 @@ getChild(Datapoint* dp, const string& name)
     }
 
     return childDp;
+}
+
+bool
+is_Int(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
 }
 
 static bool
@@ -2112,12 +2211,854 @@ TEST(PivotIEC104Plugin, OperationSpcTyp_to_C_SC_NA_1)
 
 }
 
-TEST(PivotIEC104Plugin, OperationDataObjectToPivotTStrue) {
+TEST(PivotIEC104Plugin, OperationPivotToOperationObjectTStrue) {
     outputHandlerCalled = 0;
 
-    PivotDataObject* spsTyp = new PivotDataObject("GTIS","SpsTyp");
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","SpcTyp");
 
-    ASSERT_NE(nullptr,spsTyp);
+    ASSERT_NE(nullptr,spcTyp);
+
+    long timestamp = 1669123796250;
+
+    spcTyp->setIdentifier("ID-45-998");
+    spcTyp->setCause(3);
+    spcTyp->setCtlValBool(false);
+    spcTyp->addTimestamp(timestamp);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
+    ASSERT_NE(nullptr,co_ts);
+    ASSERT_EQ(getValueStr(co_ts),to_string(timestamp));
+}
+
+TEST(PivotIEC104Plugin, OperationMultConversionsWithTimestamp) {
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","SpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+
+    spcTyp->setIdentifier("ID-45-998");
+    spcTyp->setCause(3);
+    spcTyp->setCtlValBool(false);
+    spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    for(int i = 0; i < 10; i++) {
+        if(i%2 == 0) {
+
+
+            ASSERT_EQ(i+1, outputHandlerCalled);
+
+            ASSERT_NE(nullptr, lastReading);
+
+            Datapoint* co_type = getDatapoint(lastReading,"co_type");
+            ASSERT_NE(nullptr,co_type);
+            ASSERT_EQ("C_SC_TA_1",getValueStr(co_type));
+
+            Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
+            ASSERT_NE(nullptr,co_ca);
+            ASSERT_EQ("45",getValueStr(co_ca));
+
+            Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
+            ASSERT_NE(nullptr,co_ioa);
+            ASSERT_EQ("998",getValueStr(co_ioa));
+
+            Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
+            ASSERT_NE(nullptr,co_cot);
+            ASSERT_EQ("3",getValueStr(co_cot));
+
+            Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
+            ASSERT_NE(nullptr,co_negative);
+            ASSERT_EQ("0",getValueStr(co_negative));
+
+            Datapoint* co_se = getDatapoint(lastReading,"co_se");
+            ASSERT_NE(nullptr,co_se);
+            ASSERT_EQ("dct-ctl-wes",getValueStr(co_se));
+
+            Datapoint* co_test = getDatapoint(lastReading,"co_test");
+            ASSERT_NE(nullptr,co_test);
+            ASSERT_EQ("0",getValueStr(co_test));
+
+            Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
+            ASSERT_NE(nullptr,co_ts);
+            ASSERT_EQ("1669123796250",getValueStr(co_ts));
+
+            Datapoint* co_value = getDatapoint(lastReading,"co_value");
+            ASSERT_NE(nullptr,co_value);
+            ASSERT_EQ("0",getValueStr(co_value));
+
+            plugin_ingest(handle, &readingSet);
+
+        }
+        else {
+
+
+            ASSERT_EQ(i+1, outputHandlerCalled);
+
+            ASSERT_NE(nullptr, lastReading);
+
+            Datapoint* command = getDatapoint(lastReading,"PIVOT");
+
+            ASSERT_NE(nullptr,command);
+
+            Datapoint* root = getChild(command,"GTIC");
+            ASSERT_NE(nullptr,root);
+
+            Datapoint* comingFrom = getChild(root,"ComingFrom");
+            ASSERT_NE(nullptr,comingFrom);
+            ASSERT_EQ(getValueStr(comingFrom),"iec104");
+
+            Datapoint* spcType = getChild(root,"SpcTyp");
+            ASSERT_NE(nullptr,spcType);
+
+            Datapoint* ctlVal = getChild(spcType,"ctlVal");
+            ASSERT_NE(nullptr,ctlVal);
+            ASSERT_EQ(0,getValueInt(ctlVal));
+
+            Datapoint* t = getChild(spcType,"t");
+            ASSERT_NE(nullptr,t);
+
+            Datapoint* ts = getChild(t,"SecondSinceEpoch");
+            ASSERT_NE(nullptr,ts);
+            ASSERT_EQ(timestamp,getValueInt(ts));
+            plugin_ingest(handle, &readingSet);
+
+        }
+    }
+}
+
+TEST(PivotIEC104Plugin,OperationDefaultValues) {
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","SpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+    spcTyp->setIdentifier("ID-45-999");
+    spcTyp->setCause(3);
+    // spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
+    ASSERT_NE(nullptr,co_negative);
+    ASSERT_EQ(getValueStr(co_negative),to_string(0));
+
+    Datapoint* co_se = getDatapoint(lastReading,"co_se");
+    ASSERT_NE(nullptr,co_se);
+    ASSERT_EQ(getValueStr(co_se),"dct-ctl-wes");
+
+    Datapoint* co_test = getDatapoint(lastReading,"co_test");
+    ASSERT_NE(nullptr,co_test);
+    ASSERT_EQ(getValueStr(co_test),to_string(0));
+
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionSpcTSfalse) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","SpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    spcTyp->setIdentifier("ID-45-999");
+    spcTyp->setCause(3);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SC_NA_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionSpcTStrue) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","SpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+    spcTyp->setIdentifier("ID-45-998");
+    spcTyp->setCause(3);
+    spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SC_TA_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionDpcTSfalse) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","DpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    spcTyp->setIdentifier("ID-45-888");
+    spcTyp->setCause(3);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_DC_NA_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionDpcTStrue) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","DpcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+    spcTyp->setIdentifier("ID-45-889");
+    spcTyp->setCause(3);
+    spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_DC_TA_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionIncTSfalse) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","IncTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    spcTyp->setIdentifier("ID-45-890");
+    spcTyp->setCause(3);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SE_NB_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionIncTStrue) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","IncTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+    spcTyp->setIdentifier("ID-45-891");
+    spcTyp->setCause(3);
+    spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SE_TB_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionApcTSfalse) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","ApcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    spcTyp->setIdentifier("ID-45-892");
+    spcTyp->setCause(3);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SE_NC_1");
+}
+
+TEST(PivotIEC104Plugin,OperationTypeConversionApcTStrue) {
+
+    outputHandlerCalled = 0;
+
+    PivotOperationObject* spcTyp = new PivotOperationObject("GTIC","ApcTyp");
+
+    ASSERT_NE(nullptr,spcTyp);
+
+    long TSfractionOfSecond = 1669123796250;
+    long timestamp = 1669123796;
+
+    spcTyp->setIdentifier("ID-45-893");
+    spcTyp->setCause(3);
+    spcTyp->addTimestamp(TSfractionOfSecond);
+
+    Datapoint* dp = spcTyp->toDatapoint();
+
+    ASSERT_NE(nullptr,dp);
+
+    delete spcTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("PivotCommand"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ(getValueStr(co_type),"C_SE_TC_1");
+}
+
+TEST(PivotIEC104Plugin, OperationAutomaticPivotTimestamps) {
+    outputHandlerCalled = 0;
+
+    vector<vector<Datapoint*>> commandobjects;
+
+    commandobjects.push_back(createCommandObject("C_SC_NA_1", "45", "999", "3", "0", "dct-ctl-wes", "0", "", "1"));
+
+    Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    Datapoint* pivot = getDatapoint(lastReading,"PIVOT");
+    ASSERT_NE(nullptr,pivot);
+
+    Datapoint* gtic = getChild(pivot,"GTIC");
+    ASSERT_NE(nullptr,gtic);
+
+    Datapoint* SpcTyp = getChild(gtic,"SpcTyp");
+    ASSERT_NE(nullptr,SpcTyp);
+
+    Datapoint* t = getChild(SpcTyp,"t");
+    ASSERT_NE(nullptr,t);
+
+    Datapoint* SecondSinceEpoch = getChild(t,"SecondSinceEpoch");
+    ASSERT_NE(nullptr,SecondSinceEpoch);
+    ASSERT_GT(getValueInt(SecondSinceEpoch),0);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(2, outputHandlerCalled);
+
+    Datapoint* co_type = getDatapoint(lastReading,"co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_EQ("C_SC_NA_1",getValueStr(co_type));
+
+    Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
+    ASSERT_NE(nullptr,co_ts);
+    ASSERT_EQ("",getValueStr(co_ts));
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, OperationIECCommanStructure) {
+    outputHandlerCalled = 0;
+
+    vector<vector<Datapoint*>> commandobjects;
+
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "988", "3", "0", "dct-ctl-wes", "0", "2421512", "1"));
+
+    Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    Datapoint* co_type = getDatapoint(lastReading, "co_type");
+    ASSERT_NE(nullptr,co_type);
+    ASSERT_NE(getValueStr(co_type),"");
+    ASSERT_FALSE(is_Int(getValueStr(co_type)));
+
+    Datapoint* co_ca = getDatapoint(lastReading, "co_ca");
+    ASSERT_NE(nullptr,co_ca);
+    ASSERT_NE(getValueStr(co_ca),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_ca)));
+
+    Datapoint* co_ioa = getDatapoint(lastReading, "co_ioa");
+    ASSERT_NE(nullptr,co_ioa);
+    ASSERT_NE(getValueStr(co_ioa),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_ioa)));
+
+    Datapoint* co_cot = getDatapoint(lastReading, "co_cot");
+    ASSERT_NE(nullptr,co_cot);
+    ASSERT_NE(getValueStr(co_cot),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_cot)));
+
+    Datapoint* co_negative = getDatapoint(lastReading, "co_negative");
+    ASSERT_NE(nullptr,co_negative);
+    ASSERT_NE(getValueStr(co_negative),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_negative)));
+
+    Datapoint* co_se = getDatapoint(lastReading, "co_se");
+    ASSERT_NE(nullptr,co_se);
+    ASSERT_NE(getValueStr(co_se),"");
+    ASSERT_FALSE(is_Int(getValueStr(co_se)));
+
+    Datapoint* co_test = getDatapoint(lastReading, "co_test");
+    ASSERT_NE(nullptr,co_test);
+    ASSERT_NE(getValueStr(co_test),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_test)));
+
+    Datapoint* co_ts = getDatapoint(lastReading, "co_ts");
+    ASSERT_NE(nullptr,co_ts);
+    if(getValueStr(co_type).substr(5,1) == "N")
+        ASSERT_NE(getValueStr(co_ts),"");
+    else
+        ASSERT_TRUE(is_Int(getValueStr(co_ts)));
+
+    Datapoint* co_value = getDatapoint(lastReading, "co_value");
+    ASSERT_NE(nullptr,co_value);
+    ASSERT_NE(getValueStr(co_value),"");
+    ASSERT_TRUE(is_Int(getValueStr(co_test)));
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, OperationNoTimestampIEC104Command) {
+    outputHandlerCalled = 0;
+
+    vector<vector<Datapoint*>> commandobjects;
+
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "998", "3", "0", "dct-ctl-wes", "0", "", "1"));
+
+    Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(0, outputHandlerCalled);
 }
 
 //{"GTIC":{"ComingFrom":"iec104", "SpcTyp":{"q":{"test":1}, "ctlVal":0, "t":{"SecondSinceEpoch":1669, "FractionOfSecond":1996488}}, "Identifier":"ID-45-988", "Cause":{"stVal":3}, "Confirmation":{"stVal":0}}}
