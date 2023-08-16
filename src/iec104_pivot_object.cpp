@@ -1082,14 +1082,10 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
     Datapoint* test = createDpWithValue("co_test",(std::string)(to_string(Test())));
     commandObject.push_back(test);
 
-    long time;
+    long time = 0;
 
     if (m_timestamp) {
         time = m_timestamp->getTimeInMs();
-    }
-
-    else{
-        time = 0;
     }
 
     bool hasTime = asduType.find('T') != std::string::npos && time!= 0;
