@@ -223,6 +223,44 @@ static string exchanged_data = QUOTE({
         }
     });
 
+    static string exchanged_data_1 = QUOTE({
+        "exchanged_data" : {
+            "description" : "exchanged data list",
+            "displayName" : "Exchanged data list",
+            "order" : "1",
+            "default": {}
+        }
+    });
+
+    static string exchanged_data_2 = QUOTE({
+
+        "exchanged_data" : {
+
+            "description" : "exchanged data list",
+
+            "displayName" : "Exchanged data list",
+
+            "order" : "1",
+
+            "default":  {
+
+                "exchanged_data" : {
+
+                    "name" : "iec104pivot",
+
+                    "version" : "1.0",
+
+                    "datapoints":1
+
+                }
+
+            }
+
+        }
+
+    });
+
+
 static int outputHandlerCalled = 0;
 static Reading* lastReading = nullptr;
 
@@ -271,7 +309,7 @@ static std::vector<Datapoint*> createCommandObject(const char* type, const char*
 }
 
 template <class T>
-static Datapoint* createDataObject(const char* type, int ca, int ioa, int cot,
+static Datapoint* createDataObject(int test, const char* type, int ca, int ioa, int cot,
     const T value, bool iv, bool bl, bool ov, bool sb, bool nt, long msTime, bool isInvalid, bool isSummerTime, bool isSubst)
 {
     auto* datapoints = new vector<Datapoint*>;
@@ -301,6 +339,36 @@ static Datapoint* createDataObject(const char* type, int ca, int ioa, int cot,
 
     Datapoint* dp = new Datapoint("data_object", dpv);
 
+    return dp;
+}
+
+template <class T>
+
+static Datapoint* createFakeDataObject(int doTest, const char* type, int ca, int ioa, int cot,
+    const T value, bool iv, bool bl, bool ov, bool sb, bool nt, long msTime, bool isInvalid, bool isSummerTime, bool isSubst)
+{
+    auto* datapoints = new vector<Datapoint*>;
+    datapoints->push_back(createDatapoint("do_type", type));
+    datapoints->push_back(createDatapoint("do_ca", (int64_t)ca));
+    datapoints->push_back(createDatapoint("do_oa", (int64_t)0));
+    datapoints->push_back(createDatapoint("do_cot", (int64_t)cot));
+    datapoints->push_back(createDatapoint("do_test", (int64_t)doTest));
+    datapoints->push_back(createDatapoint("do_negative", (int64_t)0));
+    datapoints->push_back(createDatapoint("do_ioa", (int64_t)ioa));
+    datapoints->push_back(createDatapoint("do_value", value));
+    datapoints->push_back(createDatapoint("do_quality_iv", (int64_t)iv));
+    datapoints->push_back(createDatapoint("do_quality_bl", (int64_t)bl));
+    datapoints->push_back(createDatapoint("do_quality_ov", (int64_t)ov));
+    datapoints->push_back(createDatapoint("do_quality_sb", (int64_t)sb));
+    datapoints->push_back(createDatapoint("do_quality_nt", (int64_t)nt));
+    if (msTime != 0) {
+         datapoints->push_back(createDatapoint("do_ts", msTime));
+         datapoints->push_back(createDatapoint("do_ts_iv", isInvalid ? 1L : 0L));
+         datapoints->push_back(createDatapoint("do_ts_su", isSummerTime ? 1L : 0L));
+         datapoints->push_back(createDatapoint("do_ts_sub", isSubst ? 1L : 0L));
+    }
+    DatapointValue dpv(datapoints, true);
+    Datapoint* dp = new Datapoint("fake_data_object", dpv);
     return dp;
 }
 
@@ -522,9 +590,9 @@ TEST(PivotIEC104Plugin, Plugin_ingest)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 672, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false));
-    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 673, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
-    dataobjects.push_back(createDataObject("M_SP_NA_1", 45, 947, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject(1,"M_SP_NA_1", 45, 672, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject(1,"M_SP_NA_1", 45, 673, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject(1,"M_SP_NA_1", 45, 947, 3, (int64_t)0, false, false, false, false, false, 0, false, false, false));
 
     Reading* reading = new Reading(std::string("TS1"), dataobjects);
 
@@ -601,7 +669,7 @@ TEST(PivotIEC104Plugin, M_SP_TB_1)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_SP_TB_1", 45, 872, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_SP_TB_1", 45, 872, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
 
     Reading* reading = new Reading(std::string("TS2"), dataobjects);
 
@@ -663,7 +731,7 @@ TEST(PivotIEC104Plugin, M_DP_TB_1)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -742,7 +810,7 @@ TEST(PivotIEC104Plugin, M_DP_TB_1_time_substituted)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, true));
+    dataobjects.push_back(createDataObject(1,"M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, true));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -821,7 +889,7 @@ TEST(PivotIEC104Plugin, M_DP_TB_1_time_invalid)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_DP_TB_1", 45, 890, 3, (int64_t)2, false, false, false, false, false, 1668631513250, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -903,7 +971,7 @@ TEST(PivotIEC104Plugin, M_DP_NA_1)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_DP_NA_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 0, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -985,7 +1053,7 @@ TEST(PivotIEC104Plugin, M_DP_NA_1_intermediate)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)0, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_DP_NA_1", 45, 890, 3, (int64_t)0, false, false, false, false, false, 0, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -1066,7 +1134,7 @@ TEST(PivotIEC104Plugin, M_DP_NA_1_bad)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_DP_NA_1", 45, 890, 3, (int64_t)3, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_DP_NA_1", 45, 890, 3, (int64_t)3, false, false, false, false, false, 0, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -1129,7 +1197,7 @@ TEST(PivotIEC104Plugin, M_ME_NC_1_QualityNonTopical)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_ME_NC_1", 45, 986, 1, (float)0.5f, false, false, false, false, true, 0, false, false, false));
+    dataobjects.push_back(createDataObject(1,"M_ME_NC_1", 45, 986, 1, (float)0.5f, false, false, false, false, true, 0, false, false, false));
 
     Reading* reading = new Reading(std::string("TM3"), dataobjects);
 
@@ -1211,7 +1279,7 @@ TEST(PivotIEC104Plugin, M_ME_NC_1_QualityOverflow)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_ME_NC_1", 45, 986, 1, (float)100.5f, false, false, true, false, false, 0, false, false, false));
+    dataobjects.push_back(createDataObject(1,"M_ME_NC_1", 45, 986, 1, (float)100.5f, false, false, true, false, false, 0, false, false, false));
 
     Reading* reading = new Reading(std::string("TM3"), dataobjects);
 
@@ -1295,7 +1363,7 @@ TEST(PivotIEC104Plugin, TypeNotMatching)
 
     vector<Datapoint*> dataobjects;
 
-    dataobjects.push_back(createDataObject("M_SP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_SP_TB_1", 45, 890, 3, (int64_t)1, false, false, false, false, false, 1668631513250, true, false, false));
 
     Reading* reading = new Reading(std::string("TS3"), dataobjects);
 
@@ -1678,7 +1746,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NA_1)
     qualityFlag = getChild(dataobject, "do_quality_iv");
     ASSERT_NE(nullptr, qualityFlag);
     ASSERT_TRUE(isValueInt(qualityFlag));
-    ASSERT_EQ(1, getValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
 
     qualityFlag = getChild(dataobject, "do_quality_nt");
     ASSERT_NE(nullptr, qualityFlag);
@@ -1799,7 +1867,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NB_1)
     qualityFlag = getChild(dataobject, "do_quality_iv");
     ASSERT_NE(nullptr, qualityFlag);
     ASSERT_TRUE(isValueInt(qualityFlag));
-    ASSERT_EQ(1, getValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
 
     qualityFlag = getChild(dataobject, "do_quality_nt");
     ASSERT_NE(nullptr, qualityFlag);
@@ -1920,7 +1988,7 @@ TEST(PivotIEC104Plugin, MvTyp_to_M_ME_NC_1)
     qualityFlag = getChild(dataobject, "do_quality_iv");
     ASSERT_NE(nullptr, qualityFlag);
     ASSERT_TRUE(isValueInt(qualityFlag));
-    ASSERT_EQ(1, getValueInt(qualityFlag));
+    ASSERT_EQ(0, getValueInt(qualityFlag));
 
     qualityFlag = getChild(dataobject, "do_quality_nt");
     ASSERT_NE(nullptr, qualityFlag);
@@ -2944,89 +3012,6 @@ TEST(PivotIEC104Plugin, OperationAutomaticPivotTimestamps) {
     plugin_shutdown(handle);
 }
 
-TEST(PivotIEC104Plugin, OperationIECCommanStructure) {
-    outputHandlerCalled = 0;
-
-    vector<vector<Datapoint*>> commandobjects;
-
-    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "988", "3", "0", "dct-ctl-wes", "0", "2421512", "1"));
-
-    Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
-
-    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
-
-    vector<Reading*> readings;
-
-    readings.push_back(reading);
-
-    ReadingSet readingSet;
-
-    readingSet.append(readings);
-
-    ConfigCategory config("exchanged_data", exchanged_data);
-
-    config.setItemsValueFromDefault();
-
-    string configValue = config.getValue("exchanged_data");
-
-    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
-
-    ASSERT_TRUE(handle != nullptr);
-
-    plugin_ingest(handle, &readingSet);
-
-    ASSERT_EQ(1, outputHandlerCalled);
-
-    Datapoint* co_type = getDatapoint(lastReading, "co_type");
-    ASSERT_NE(nullptr,co_type);
-    ASSERT_NE(getValueStr(co_type),"");
-    ASSERT_FALSE(is_Int(getValueStr(co_type)));
-
-    Datapoint* co_ca = getDatapoint(lastReading, "co_ca");
-    ASSERT_NE(nullptr,co_ca);
-    ASSERT_NE(getValueStr(co_ca),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_ca)));
-
-    Datapoint* co_ioa = getDatapoint(lastReading, "co_ioa");
-    ASSERT_NE(nullptr,co_ioa);
-    ASSERT_NE(getValueStr(co_ioa),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_ioa)));
-
-    Datapoint* co_cot = getDatapoint(lastReading, "co_cot");
-    ASSERT_NE(nullptr,co_cot);
-    ASSERT_NE(getValueStr(co_cot),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_cot)));
-
-    Datapoint* co_negative = getDatapoint(lastReading, "co_negative");
-    ASSERT_NE(nullptr,co_negative);
-    ASSERT_NE(getValueStr(co_negative),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_negative)));
-
-    Datapoint* co_se = getDatapoint(lastReading, "co_se");
-    ASSERT_NE(nullptr,co_se);
-    ASSERT_NE(getValueStr(co_se),"");
-    ASSERT_FALSE(is_Int(getValueStr(co_se)));
-
-    Datapoint* co_test = getDatapoint(lastReading, "co_test");
-    ASSERT_NE(nullptr,co_test);
-    ASSERT_NE(getValueStr(co_test),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_test)));
-
-    Datapoint* co_ts = getDatapoint(lastReading, "co_ts");
-    ASSERT_NE(nullptr,co_ts);
-    if(getValueStr(co_type).substr(5,1) == "N")
-        ASSERT_NE(getValueStr(co_ts),"");
-    else
-        ASSERT_TRUE(is_Int(getValueStr(co_ts)));
-
-    Datapoint* co_value = getDatapoint(lastReading, "co_value");
-    ASSERT_NE(nullptr,co_value);
-    ASSERT_NE(getValueStr(co_value),"");
-    ASSERT_TRUE(is_Int(getValueStr(co_test)));
-
-    plugin_shutdown(handle);
-}
-
 TEST(PivotIEC104Plugin, OperationNoTimestampIEC104Command) {
     outputHandlerCalled = 0;
 
@@ -3059,6 +3044,151 @@ TEST(PivotIEC104Plugin, OperationNoTimestampIEC104Command) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(0, outputHandlerCalled);
+}
+
+TEST(PivotIEC104Plugin, M_ME_NA_1)
+{
+    
+    outputHandlerCalled = 0;
+    vector<Datapoint*> dataobjects;
+    dataobjects.push_back(createDataObject(1,"M_ME_NA_1", 45, 984, 3, (float)0, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_ME_NA_1", 45, 984, 3, (float)0, false, false, false, false, false, 0, true, false, false));
+    Reading* reading = new Reading(std::string("TM1"), dataobjects);
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+    vector<Reading*> readings;
+    readings.push_back(reading);
+    ReadingSet readingSet;
+    readingSet.append(readings);
+    ConfigCategory config("exchanged_data", exchanged_data);
+    config.setItemsValueFromDefault();
+    uint64_t timeInMs = PivotTimestamp::GetCurrentTimeInMs();
+    string configValue = config.getValue("exchanged_data");
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+    ASSERT_NE(nullptr, lastReading);
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("good", getValueStr(qValidiy));
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(3, getValueInt(causeStVal));
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, M_ME_NB_1)
+{
+    outputHandlerCalled = 0;
+    vector<Datapoint*> dataobjects;
+    dataobjects.push_back(createDataObject(1,"M_ME_NB_1", 45, 985, 3, (int64_t)0, false, false, false, false, false, 0, true, false, false));
+    dataobjects.push_back(createDataObject(1,"M_ME_NB_1", 45, 985, 3, (float)0, false, false, false, false, false, 0, true, false, false));
+    Reading* reading = new Reading(std::string("TM2"), dataobjects);
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+    vector<Reading*> readings;
+    readings.push_back(reading);
+    ReadingSet readingSet;
+    readingSet.append(readings);
+    ConfigCategory config("exchanged_data", exchanged_data);
+    config.setItemsValueFromDefault();
+    uint64_t timeInMs = PivotTimestamp::GetCurrentTimeInMs();
+    string configValue = config.getValue("exchanged_data");
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+    ASSERT_TRUE(handle != nullptr);
+    plugin_ingest(handle, &readingSet);
+    ASSERT_EQ(1, outputHandlerCalled);
+    ASSERT_NE(nullptr, lastReading);
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("good", getValueStr(qValidiy));
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(3, getValueInt(causeStVal));
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, M_ME_NC_1)
+{
+    outputHandlerCalled = 0;
+    vector<Datapoint*> dataobjects;
+    dataobjects.push_back(createDataObject(1,"M_ME_NC_1", 45, 986, 1, (float)0.2f, false, false, false, false, true, 0, false, false, false));
+    Reading* reading = new Reading(std::string("TM3"), dataobjects);
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+    vector<Reading*> readings;
+    readings.push_back(reading);
+    ReadingSet readingSet;
+    readingSet.append(readings);
+    ConfigCategory config("exchanged_data", exchanged_data);
+    config.setItemsValueFromDefault();
+    string configValue = config.getValue("exchanged_data");
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+    ASSERT_TRUE(handle != nullptr);
+    plugin_ingest(handle, &readingSet);
+    ASSERT_EQ(1, outputHandlerCalled);
+    ASSERT_NE(nullptr, lastReading);
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+    Datapoint* mag = getChild(mvTyp, "mag");
+    ASSERT_NE(nullptr, mag);
+    Datapoint* magF = getChild(mag, "f");
+    ASSERT_NE(nullptr, magF);
+    ASSERT_TRUE(isValueFloat(magF));
+    ASSERT_EQ(0.2f, getValueFloat(magF));
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("questionable", getValueStr(qValidiy));
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(1, getValueInt(causeStVal));
+    plugin_shutdown(handle);
 }
 
 //{"GTIC":{"ComingFrom":"iec104", "SpcTyp":{"q":{"test":1}, "ctlVal":0, "t":{"SecondSinceEpoch":1669, "FractionOfSecond":1996488}}, "Identifier":"ID-45-988", "Cause":{"stVal":3}, "Confirmation":{"stVal":0}}}
