@@ -817,29 +817,34 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             else{
                 IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByLabel(assetName);
 
-                for (Datapoint* dp : datapoints) {
-                    printf("DATAPOINT: (%s)\n", dp->toJSONProperty().c_str());
-                    if (dp->getName() == "data_object") {
-                        Datapoint* convertedDp = convertDataObjectToPivot(dp, exchangeConfig);
+                if(exchangeConfig){
+                    for (Datapoint* dp : datapoints) {
+                        printf("DATAPOINT: (%s)\n", dp->toJSONProperty().c_str());
+                        if (dp->getName() == "data_object") {
+                            Datapoint* convertedDp = convertDataObjectToPivot(dp, exchangeConfig);
 
-                        if (convertedDp) {
-                            convertedDatapoints.push_back(convertedDp);
+                            if (convertedDp) {
+                                convertedDatapoints.push_back(convertedDp);
+                            }
+                            else {
+                              Logger::getLogger()->error("Failed to convert object");
+                            }
+                        }
+
+                        else if (dp->getName() == "PIVOT") {
+                            Datapoint* convertedDp = convertDatapointToIEC104DataObject(dp, exchangeConfig);
+
+                            if (convertedDp) {
+                                convertedDatapoints.push_back(convertedDp);
+                            }
                         }
                         else {
-                          Logger::getLogger()->error("Failed to convert object");
+                            Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
                         }
                     }
-
-                    else if (dp->getName() == "PIVOT") {
-                        Datapoint* convertedDp = convertDatapointToIEC104DataObject(dp, exchangeConfig);
-
-                        if (convertedDp) {
-                            convertedDatapoints.push_back(convertedDp);
-                        }
-                    }
-                    else {
-                        Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
-                    }
+                }
+                else{
+                    Logger::getLogger()->error("Asset (%s) not found", assetName.c_str());
                 }
             }
 
