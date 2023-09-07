@@ -61,9 +61,9 @@ private:
     int m_fractionOfSecond;
 
     int m_timeAccuracy;
-    bool m_clockFailure;
-    bool m_leapSecondKnown;
-    bool m_clockNotSynchronized;
+    bool m_clockFailure = false;
+    bool m_leapSecondKnown = false;
+    bool m_clockNotSynchronized = false;
 };
 
 
@@ -87,7 +87,8 @@ public:
         SPC,
         DPC,
         INC,
-        APC
+        APC,
+        BSC
     } PivotCdc;
 
     void setIdentifier(const string& identifier);
@@ -122,8 +123,8 @@ protected:
     PivotTimestamp* m_timestamp = nullptr;
 
     bool hasIntVal = true;
-    long intVal;
-    float floatVal;
+    long intVal = 0;
+    float floatVal = 0.0;
 };
 
 
@@ -153,6 +154,7 @@ public:
     void setStValStr(const std::string& value);
     void setMagI(int value);
     void setMagF(float value);
+    void setPosVal(int value, bool trans);
 
     void addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test);
     void addTimestamp(long ts, bool iv, bool su, bool sub);
@@ -173,6 +175,7 @@ public:
     bool OutOfRange() {return m_outOfRange;};
     bool Overflow() {return m_overflow;};
     bool OperatorBlocked() {return m_operatorBlocked;};
+    bool isTransient() {return m_transient;}
 
     bool IsTimestampSubstituted() {return m_timestampSubstituted;};
     bool IsTimestampInvalid() {return m_timestampInvalid;};
@@ -196,6 +199,7 @@ private:
 
     bool m_timestampSubstituted = false;
     bool m_timestampInvalid = false;
+    bool m_transient = false;
 };
 
 class PivotOperationObject : public PivotObject
@@ -206,7 +210,7 @@ public:
     PivotOperationObject(const string& pivotLN, const string& valueType);
     ~PivotOperationObject();
 
-    void setBeh(const string& beh);
+    void setSelect(int select);
     void setCtlValBool(bool value);
     void setCtlValStr(const std::string& value);
     void setCtlValI(int value);
@@ -215,10 +219,10 @@ public:
 
     std::vector<Datapoint*> toIec104OperationObject(IEC104PivotDataPoint* exchangeConfig);
 
-    std::string getBeh() {return m_beh;}
+    int getSelect() {return m_select;}
 
 private:
-    std::string m_beh = "dct-ctl-wes";
+    int m_select = 0;
 
 };
 

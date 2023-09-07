@@ -47,6 +47,35 @@ IEC104PivotConfig::~IEC104PivotConfig()
 #define JSON_PROT_ADDR "address"
 #define JSON_PROT_TYPEID "typeid"
 
+IEC104PivotDataPoint* 
+IEC104PivotConfig::getExchangeDefinitionsByLabel(std::string label){
+    auto it = m_exchangeDefinitionsLabel.find(label);
+    if (it != m_exchangeDefinitionsLabel.end()) {
+        return it->second.get();
+    } else {
+        return nullptr;
+    }
+}
+
+IEC104PivotDataPoint* 
+IEC104PivotConfig::getExchangeDefinitionsByAddress(std::string address){
+    auto it = m_exchangeDefinitionsAddress.find(address);
+    if (it != m_exchangeDefinitionsAddress.end()) {
+        return it->second.get();
+    } else {
+        return nullptr;
+    }
+}
+
+IEC104PivotDataPoint* 
+IEC104PivotConfig::getExchangeDefinitionsByPivotId(std::string pivotid){
+    auto it = m_exchangeDefinitionsPivotId.find(pivotid);
+    if (it != m_exchangeDefinitionsPivotId.end()) {
+        return it->second.get();
+    } else {
+        return nullptr;
+    }
+}
 
 void
 IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
@@ -125,7 +154,7 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
                     int ca = std::stoi(caStr);
                     int ioa = std::stoi(ioaStr);
 
-                    IEC104PivotDataPoint* newDp = new IEC104PivotDataPoint(label, pivotId, pivotType, typeIdStr, ca, ioa, alternateMappingRule);
+                    auto newDp = std::make_shared<IEC104PivotDataPoint>(label, pivotId, pivotType, typeIdStr, ca, ioa, alternateMappingRule);
 
                     m_exchangeDefinitionsLabel[label] = newDp;
                     m_exchangeDefinitionsAddress[address] = newDp;
@@ -138,23 +167,10 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     m_exchangeConfigComplete = true;
 }
 
-void
+void 
 IEC104PivotConfig::deleteExchangeDefinitions()
 {
-    //release elements of map
-    auto it = m_exchangeDefinitionsLabel.begin();
-
-    while (it != m_exchangeDefinitionsLabel.end()) {
-        IEC104PivotDataPoint* dp = it->second;
-
-        delete dp;
-
-        it++;
-    }
-
     m_exchangeDefinitionsLabel.clear();
-
     m_exchangeDefinitionsAddress.clear();
-
     m_exchangeDefinitionsPivotId.clear();
 }
