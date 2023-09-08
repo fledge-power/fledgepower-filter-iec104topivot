@@ -95,6 +95,10 @@ public:
     void setCause(int cause);
     void setConfirmation(bool value);
     void setTest(bool value);
+    void setCtlValBool(bool value);
+    void setCtlValStr(const std::string& value);
+    void setCtlValI(int value);
+    void setCtlValF(float value);
 
     Datapoint* toDatapoint() {return m_dp;};
 
@@ -211,10 +215,6 @@ public:
     ~PivotOperationObject();
 
     void setSelect(int select);
-    void setCtlValBool(bool value);
-    void setCtlValStr(const std::string& value);
-    void setCtlValI(int value);
-    void setCtlValF(float value);
     void addTimestamp(long ts);
 
     std::vector<Datapoint*> toIec104OperationObject(IEC104PivotDataPoint* exchangeConfig);
