@@ -544,7 +544,7 @@ PivotDataObject::PivotDataObject(Datapoint* pivotData)
             m_cause = getChildValueInt(cause, "stVal");
         }
 
-        Datapoint* confirmation = getChild(m_ln, "Cause");
+        Datapoint* confirmation = getChild(m_ln, "Confirmation");
 
         if (confirmation) {
             int confirmationVal = getChildValueInt(confirmation, "stVal");
