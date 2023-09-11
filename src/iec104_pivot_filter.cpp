@@ -457,6 +457,8 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                     }
                     else {
                         Logger::getLogger()->error("Failed to convert object");
+                        // We let pass the data_object as is for ACK
+                        convertedDatapoints.push_back(dp);
                     }
                 }
                 else if (dp->getName() == "PIVOT") {
@@ -464,10 +466,14 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
                     if (convertedDp) {
                         convertedDatapoints.push_back(convertedDp);
-                    }
+                    } else {
+                        // We let pass the data_object as is for ACK
+                        convertedDatapoints.push_back(dp);
+                    }        
                 }
                 else {
                     Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
+                    convertedDatapoints.push_back(dp);
                 }
             }
 
