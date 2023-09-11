@@ -481,7 +481,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
             if(hasDoTest)pivot.setTest(doTest);
-
+            if(hasDoNegative) pivot.setConfirmation(doNegative);
             if (doValue) {
                 bool spsValue = false;
 
@@ -504,6 +504,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
             if(hasDoTest)pivot.setTest(doTest);
+            if(hasDoNegative) pivot.setConfirmation(doNegative);
 
             if (doValue) {
 
@@ -536,6 +537,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
             if(hasDoTest)pivot.setTest(doTest);
+            if(hasDoNegative) pivot.setConfirmation(doNegative);
 
             if (doValue) {
                 pivot.setCtlValF(doValue->getData().toDouble());
@@ -551,6 +553,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
             if(hasDoTest)pivot.setTest(doTest);
+            if(hasDoNegative) pivot.setConfirmation(doNegative);
 
             if (doValue) {
                 pivot.setCtlValI(doValue->getData().toInt());
@@ -566,6 +569,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             pivot.setIdentifier(exchangeConfig->getPivotId());
             pivot.setCause(doCot);
             if(hasDoTest)pivot.setTest(doTest);
+            if(hasDoNegative) pivot.setConfirmation(doNegative);
 
             if (doValue) {
                 int ctlValue = doValue->getData().toInt();
