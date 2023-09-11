@@ -588,7 +588,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                             pivot.setCtlValStr("reserved");
                             break;
                         default:
-                            Logger::getLogger()->warn("Invalid step dommand value: %s", exchangeConfig->getPivotId());
+                            Logger::getLogger()->warn("Invalid step dommand value: %s", (exchangeConfig->getPivotId()).c_str());
                             break;
                     }
             }
@@ -878,7 +878,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
                             pivot.setCtlValStr("reserved");
                             break;
                         default:
-                            Logger::getLogger()->warn("Invalid step command value: %s", exchangeConfig->getPivotId());
+                            Logger::getLogger()->warn("Invalid step command value: %s", (exchangeConfig->getPivotId()).c_str());
                             break;
                     }
             }

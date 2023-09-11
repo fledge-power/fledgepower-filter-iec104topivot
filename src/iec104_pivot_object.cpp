@@ -872,7 +872,6 @@ PivotOperationObject::PivotOperationObject(Datapoint* pivotData)
 
                 default:
                     throw PivotObjectException("CDC type unknown");
-                    break;
             }
     }
     else {
