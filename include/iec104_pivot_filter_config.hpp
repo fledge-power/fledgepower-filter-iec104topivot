@@ -14,6 +14,7 @@
 
 #include <map>
 #include <vector>
+#include <memory>
 
 using namespace std;
 
@@ -50,9 +51,9 @@ public:
 
     void importExchangeConfig(const string& exchangeConfig);
 
-    IEC104PivotDataPoint* getExchangeDefinitionsByLabel(std::string label) {return m_exchangeDefinitionsLabel[label];};
-    IEC104PivotDataPoint* getExchangeDefinitionsByAddress(std::string address) {return m_exchangeDefinitionsAddress[address];};
-    IEC104PivotDataPoint* getExchangeDefinitionsByPivotId(std::string pivotid) {return m_exchangeDefinitionsPivotId[pivotid];};
+    IEC104PivotDataPoint* getExchangeDefinitionsByLabel(std::string label);
+    IEC104PivotDataPoint* getExchangeDefinitionsByAddress(std::string address);
+    IEC104PivotDataPoint* getExchangeDefinitionsByPivotId(std::string pivotid);
 
 private:
 
@@ -60,12 +61,9 @@ private:
 
     bool m_exchangeConfigComplete;
 
-    /* list of exchange data points -> the label is the key */
-    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsLabel;
-    /* list of exchange data points -> the address is the key */
-    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsAddress;
-    /* list of exchange data points -> the pivot id is the key */
-    std::map<std::string, IEC104PivotDataPoint*> m_exchangeDefinitionsPivotId;
+    std::map<std::string, std::shared_ptr<IEC104PivotDataPoint>> m_exchangeDefinitionsLabel;
+    std::map<std::string, std::shared_ptr<IEC104PivotDataPoint>> m_exchangeDefinitionsAddress;
+    std::map<std::string, std::shared_ptr<IEC104PivotDataPoint>> m_exchangeDefinitionsPivotId;
 
 };
 
