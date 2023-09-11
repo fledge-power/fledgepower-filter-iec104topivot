@@ -1120,6 +1120,10 @@ PivotDataObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
             addElementWithValue(dataObject, "do_quality_ov", (long)(Overflow() ? 1 : 0));
         }
 
+        if(m_pivotClass == PivotClass::GTIC){
+            addElementWithValue(dataObject, "do_negative", (long)(isConfirmation() ? 1 : 0));
+        }
+
         if (m_timestamp) {
             addElementWithValue(dataObject, "do_ts", ((long)(uint64_t)m_timestamp->getTimeInMs()));
 
