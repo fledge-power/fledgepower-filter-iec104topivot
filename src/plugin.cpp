@@ -28,7 +28,6 @@ using namespace rapidjson;
 extern "C" {
 
 #define PLUGIN_NAME "iec104_pivot_filter"
-#define VERSION "1.0.0"
 
 /**
  * Plugin specific default configuration
