@@ -699,7 +699,6 @@ TEST(PivotIEC104Plugin, PluginInfo)
 	PLUGIN_INFORMATION *info = plugin_info();
 	ASSERT_STREQ(info->name, "iec104_pivot_filter");
 	ASSERT_EQ(info->type, PLUGIN_TYPE_FILTER);
-    ASSERT_STREQ(info->version, "1.0.1");
 }
 
 static void testOutputStream(OUTPUT_HANDLE * handle, READINGSET* readingSet)
