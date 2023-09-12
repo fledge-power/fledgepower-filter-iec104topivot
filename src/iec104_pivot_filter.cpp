@@ -989,7 +989,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
             if(exchangeConfig){
                 for (Datapoint* dp : datapoints) {
-                    printf("DATAPOINT: (%s)\n", dp->toJSONProperty().c_str());
+                    //printf("DATAPOINT: (%s)\n", dp->toJSONProperty().c_str());
                     if (dp->getName() == "data_object") {
                         Datapoint* convertedDp = convertDataObjectToPivot(dp, exchangeConfig);
 
@@ -1009,13 +1009,18 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         }
                     }
                     else {
-                        convertedDatapoints.push_back(dp);
+                        Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
+                        convertedDatapoints.push_back(dpCopy);
                     }
                 }
             }
-            else{
-                Logger::getLogger()->error("Asset (%s) not found", assetName.c_str());
+            else {
+                 for (Datapoint* dp : datapoints) {
+                        Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
+                        convertedDatapoints.push_back(dpCopy);
+                    }
             }
+
         }
 
         reading->removeAllDatapoints();
