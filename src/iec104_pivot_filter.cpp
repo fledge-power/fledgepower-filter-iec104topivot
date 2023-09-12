@@ -1009,7 +1009,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         }
                     }
                     else {
-                        Logger::getLogger()->error("(%s) not a data_object", dp->getName().c_str());
+                        convertedDatapoints.push_back(dp);
                     }
                 }
             }
