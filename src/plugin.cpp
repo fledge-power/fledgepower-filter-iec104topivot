@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include <plugin_api.h>
@@ -28,7 +28,6 @@ using namespace rapidjson;
 extern "C" {
 
 #define PLUGIN_NAME "iec104_pivot_filter"
-#define VERSION "1.0.0"
 
 /**
  * Plugin specific default configuration

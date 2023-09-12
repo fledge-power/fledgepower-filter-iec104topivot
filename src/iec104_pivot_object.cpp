@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #include "iec104_pivot_object.hpp"
@@ -78,7 +78,7 @@ getChild(Datapoint* dp, const string& name)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == name) {
                 childDp = child;
@@ -156,6 +156,68 @@ getValueFloat(Datapoint* dp)
 }
 
 void
+PivotTimestamp::setTimeInMs(long ms){
+    uint32_t timeval32 = (uint32_t) (ms/ 1000LL);
+
+    m_valueArray[0] = (timeval32 / 0x1000000 & 0xff);
+    m_valueArray[1] = (timeval32 / 0x10000 & 0xff);
+    m_valueArray[2] = (timeval32 / 0x100 & 0xff);
+    m_valueArray[3] = (timeval32 & 0xff);
+
+    uint32_t remainder = (ms % 1000LL);
+    uint32_t fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+
+    m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+    m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+    m_valueArray[6] = (fractionOfSecond & 0xff);
+}
+
+uint64_t
+PivotTimestamp::getTimeInMs(){
+    uint32_t timeval32;
+
+    timeval32 = m_valueArray[3];
+    timeval32 += m_valueArray[2] * 0x100;
+    timeval32 += m_valueArray[1] * 0x10000;
+    timeval32 += m_valueArray[0] * 0x1000000;
+
+    uint32_t fractionOfSecond = 0;
+
+    fractionOfSecond = (m_valueArray[4] << 16);
+    fractionOfSecond += (m_valueArray[5] << 8);
+    fractionOfSecond += (m_valueArray[6]);
+
+    uint32_t remainder = fractionOfSecond / 16777;
+
+    uint64_t msVal = (timeval32 * 1000LL) + remainder;
+
+    return (uint64_t) msVal;
+}
+
+int
+PivotTimestamp::FractionOfSecond(){
+    uint32_t fractionOfSecond = 0;
+
+    fractionOfSecond = (m_valueArray[4] << 16);
+    fractionOfSecond += (m_valueArray[5] << 8);
+    fractionOfSecond += (m_valueArray[6]);
+
+    return fractionOfSecond;
+}
+
+int
+PivotTimestamp::SecondSinceEpoch(){
+    int32_t timeval32;
+
+    timeval32 = m_valueArray[3];
+    timeval32 += m_valueArray[2] * 0x100;
+    timeval32 += m_valueArray[1] * 0x10000;
+    timeval32 += m_valueArray[0] * 0x1000000;
+
+    return timeval32;
+}
+
+void
 PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
 {
     DatapointValue& dpv = timeQuality->getData();
@@ -163,7 +225,7 @@ PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "clockFailure") {
@@ -194,24 +256,57 @@ PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
 PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
 {
     DatapointValue& dpv = timestampData->getData();
+    m_valueArray = new uint8_t[7];
 
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "SecondSinceEpoch") {
-                m_secondSinceEpoch = getValueInt(child);
+                uint32_t secondSinceEpoch = getValueInt(child);
+
+                m_valueArray[0] = (secondSinceEpoch / 0x1000000 & 0xff);
+                m_valueArray[1] = (secondSinceEpoch / 0x10000 & 0xff);
+                m_valueArray[2] = (secondSinceEpoch / 0x100 & 0xff);
+                m_valueArray[3] = (secondSinceEpoch & 0xff);
             }
             else if (child->getName() == "FractionOfSecond") {
-                m_fractionOfSecond = getValueInt(child);
+                uint32_t fractionOfSecond = getValueInt(child);
+
+                m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+                m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+                m_valueArray[6] = (fractionOfSecond & 0xff);
             }
             else if (child->getName() == "TimeQuality") {
                 handleTimeQuality(child);
             }
         }
     }
+}
+
+PivotTimestamp::PivotTimestamp(long ms)
+{
+    m_valueArray = new uint8_t[7];
+    uint32_t timeval32 = (uint32_t) (ms/ 1000LL);
+
+    m_valueArray[0] = (timeval32 / 0x1000000 & 0xff);
+    m_valueArray[1] = (timeval32 / 0x10000 & 0xff);
+    m_valueArray[2] = (timeval32 / 0x100 & 0xff);
+    m_valueArray[3] = (timeval32 & 0xff);
+
+    uint32_t remainder = (ms % 1000LL);
+    uint32_t fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+
+    m_valueArray[4] = ((fractionOfSecond >> 16) & 0xff);
+    m_valueArray[5] = ((fractionOfSecond >> 8) & 0xff);
+    m_valueArray[6] = (fractionOfSecond & 0xff);
+}
+
+PivotTimestamp::~PivotTimestamp()
+{
+    delete[] m_valueArray;
 }
 
 uint64_t
@@ -233,7 +328,7 @@ PivotObject::getCdc(Datapoint* dp)
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == "SpsTyp") {
                 cdcDp = child;
@@ -250,6 +345,31 @@ PivotObject::getCdc(Datapoint* dp)
                 m_pivotCdc = PivotCdc::DPS;
                 break;
             }
+            else if (child->getName() == "SpcTyp") {
+                cdcDp = child;
+                m_pivotCdc = PivotCdc::SPC;
+                break;
+            }
+            else if (child->getName() == "DpcTyp") {
+                cdcDp = child;
+                m_pivotCdc = PivotCdc::DPC;
+                break;
+            }
+            else if (child->getName() == "IncTyp") {
+                cdcDp = child;
+                m_pivotCdc = PivotCdc::INC;
+                break;
+            }
+            else if (child->getName() == "ApcTyp") {
+                cdcDp = child;
+                m_pivotCdc = PivotCdc::APC;
+                break;
+            }
+            else if (child->getName() == "BscTyp") {
+                cdcDp = child;
+                m_pivotCdc = PivotCdc::BSC;
+                break;
+            }
         }
     }
 
@@ -257,13 +377,13 @@ PivotObject::getCdc(Datapoint* dp)
 }
 
 void
-PivotObject::handleDetailQuality(Datapoint* detailQuality)
+PivotDataObject::handleDetailQuality(Datapoint* detailQuality)
 {
     DatapointValue& dpv = detailQuality->getData();
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints)
         {
             if (child->getName() == "badReference") {
@@ -319,13 +439,13 @@ PivotObject::handleDetailQuality(Datapoint* detailQuality)
 }
 
 void
-PivotObject::handleQuality(Datapoint* q)
+PivotDataObject::handleQuality(Datapoint* q)
 {
     DatapointValue& dpv = q->getData();
 
     if (dpv.getType() == DatapointValue::T_DP_DICT) {
         std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
         for (Datapoint* child : *datapoints) {
             if (child->getName() == "Validity") {
                 string validityStr = getValueStr(child);
@@ -346,7 +466,7 @@ PivotObject::handleQuality(Datapoint* q)
                 }
             }
             else if (child->getName() == "Source") {
-                
+
                 string sourceStr = getValueStr(child);
 
                 if (sourceStr != "process") {
@@ -377,7 +497,7 @@ PivotObject::handleQuality(Datapoint* q)
     }
 }
 
-PivotObject::PivotObject(Datapoint* pivotData)
+PivotDataObject::PivotDataObject(Datapoint* pivotData)
 {
     if (pivotData->getName() == "PIVOT")
     {
@@ -390,7 +510,7 @@ PivotObject::PivotObject(Datapoint* pivotData)
 
         if (dpv.getType() == DatapointValue::T_DP_DICT) {
             std::vector<Datapoint*>* datapoints = dpv.getDpVec();
-    
+
             for (Datapoint* child : *datapoints) {
                 if (child->getName() == "GTIS") {
                     m_pivotClass = PivotClass::GTIS;
@@ -424,13 +544,13 @@ PivotObject::PivotObject(Datapoint* pivotData)
             m_cause = getChildValueInt(cause, "stVal");
         }
 
-        Datapoint* confirmation = getChild(m_ln, "Cause");
+        Datapoint* confirmation = getChild(m_ln, "Confirmation");
 
         if (confirmation) {
             int confirmationVal = getChildValueInt(confirmation, "stVal");
 
             if (confirmationVal > 0) {
-                m_isConfirmation = true;
+                m_confirmation = true;
             }
         }
 
@@ -475,70 +595,112 @@ PivotObject::PivotObject(Datapoint* pivotData)
                 m_timestamp = new PivotTimestamp(t);
             }
 
-            if (m_pivotCdc == PivotCdc::SPS) {
-                Datapoint* stVal = getChild(cdc, "stVal");
-
-                if (stVal) {
-                    hasIntVal = true;
-
-                    if (getValueInt(stVal) > 0) {
-                        intVal = 1;
+            switch (m_pivotCdc) {
+                case PivotCdc::SPS:
+                case PivotCdc::SPC:
+                {
+                    Datapoint* stVal = getChild(cdc, (m_pivotCdc == PivotCdc::SPS) ? "stVal" : "ctlVal");
+                    if (stVal) {
+                        hasIntVal = true;
+                        intVal = getValueInt(stVal) > 0 ? 1 : 0;
                     }
-                    else {
-                        intVal = 0;
-                    }
+                    break;
                 }
-            }
-            else if (m_pivotCdc == PivotCdc::DPS) {
-                Datapoint* stVal = getChild(cdc, "stVal");
 
-                if (stVal) {
-                    string stValStr = getValueStr(stVal);
+                case PivotCdc::DPS:
+                case PivotCdc::DPC:
+                {
+                    Datapoint* stVal = getChild(cdc, (m_pivotCdc == PivotCdc::DPS) ? "stVal" : "ctlVal");
+                    if (stVal) {
+                        hasIntVal = true;
+                        string stValStr = getValueStr(stVal);
 
-                    if (stValStr == "intermediate-state")
-                        intVal = 0;
-                    else if (stValStr == "off")
-                        intVal = 1;
-                    else if (stValStr == "on")
-                        intVal = 2;
-                    else if (stValStr == "bad-state")
-                        intVal = 3;
-                }
-            }
-            else if (m_pivotCdc == PivotCdc::MV) {
-                Datapoint* mag = getChild(cdc, "mag");
-
-                if (mag) {
-                    Datapoint* mag_f = getChild(mag, "f");
-
-                    if (mag_f) {
-                        hasIntVal = false;
-
-                        floatVal = getValueFloat(mag_f);
+                        if (stValStr == "intermediate-state") intVal = 0;
+                        else if (stValStr == "off") intVal = 1;
+                        else if (stValStr == "on") intVal = 2;
+                        else if (stValStr == "bad-state") intVal = 3;
                     }
-                    else {
-                        Datapoint* mag_i = getChild(mag, "i");
+                    break;
+                }
 
-                        if (mag_i) {
-                            hasIntVal = true;
-
-                            intVal = getValueInt(mag_i);
+                case PivotCdc::MV:
+                {
+                    Datapoint* mag = getChild(cdc, "mag");
+                    if (mag) {
+                        Datapoint* mag_f = getChild(mag, "f");
+                        if (mag_f) {
+                            hasIntVal = false;
+                            floatVal = getValueFloat(mag_f);
+                        } else {
+                            Datapoint* mag_i = getChild(mag, "i");
+                            if (mag_i) {
+                                hasIntVal = true;
+                                intVal = getValueInt(mag_i);
+                            }
                         }
                     }
-
+                    break;
                 }
-            }
+
+                case PivotCdc::BSC:
+                {
+                    Datapoint* valWtr = getChild(cdc, "valWtr");
+                    if (valWtr) {
+                        Datapoint* valWtrPosVal = getChild(valWtr, "posVal");
+                        if (valWtrPosVal) {
+                            intVal = getValueInt(valWtrPosVal);
+                        }
+                        Datapoint* valWtrTransInd = getChild(valWtr, "transInd");
+                        if (valWtrTransInd) {
+                            m_transient = static_cast<bool>(getValueInt(valWtrTransInd));
+                        }
+                    } else {
+                        Datapoint* value = getChild(cdc, "ctlVal");
+                        if (value) {
+                            hasIntVal = true;
+                            string valStr = getValueStr(value);
+
+                            if (valStr == "stop") intVal = 0;
+                            else if (valStr == "lower") intVal = 1;
+                            else if (valStr == "higher") intVal = 2;
+                            else if (valStr == "reserved") intVal = 3;
+                        }
+                    }
+                    break;
+                }
+
+                case PivotCdc::INC:
+                case PivotCdc::APC:
+                {
+                    Datapoint* value = getChild(cdc, "ctlVal");
+                    if (value) {
+                        hasIntVal = (m_pivotCdc == PivotCdc::INC);
+                        if (hasIntVal) {
+                            intVal = getValueInt(value);
+                        } else {
+                            floatVal = getValueFloat(value);
+                        }
+                    }
+                    break;
+                }
+
+                default:
+                    throw PivotObjectException("CDC element not found or CDC type unknown");
         }
-        else {
-            throw PivotObjectException("CDC element not found or CDC type unknown");
-        }
+
     }
     else {
         throw PivotObjectException("No pivot object");
     }
 }
+}
 
-PivotObject::PivotObject(const string& pivotLN, const string& valueType)
+PivotDataObject::~PivotDataObject()
+{
+    if (m_timestamp) delete m_timestamp;
+}
+
+PivotDataObject::PivotDataObject(const string& pivotLN, const string& valueType)
 {
     m_dp = createDp("PIVOT");
 
@@ -549,15 +711,198 @@ PivotObject::PivotObject(const string& pivotLN, const string& valueType)
     m_cdc = addElement(m_ln, valueType);
 }
 
-PivotObject::~PivotObject()
+PivotOperationObject::~PivotOperationObject()
 {
     if (m_timestamp) delete m_timestamp;
+}
+
+PivotOperationObject::PivotOperationObject(const string& pivotLN, const string& valueType)
+{
+    m_dp = createDp("PIVOT");
+
+    m_ln = addElement(m_dp, pivotLN);
+
+    addElementWithValue(m_ln, "ComingFrom", "iec104");
+
+    m_cdc = addElement(m_ln, valueType);
+
+}
+
+
+PivotOperationObject::PivotOperationObject(Datapoint* pivotData)
+{
+    if (pivotData->getName() == "PIVOT")
+    {
+        m_dp = pivotData;
+        m_ln = nullptr;
+
+        Datapoint* childDp = nullptr;
+
+        DatapointValue& dpv = pivotData->getData();
+
+        if (dpv.getType() == DatapointValue::T_DP_DICT) {
+            std::vector<Datapoint*>* datapoints = dpv.getDpVec();
+
+            for (Datapoint* child : *datapoints) {
+                if (child->getName() == "GTIC") {
+                    m_pivotClass = PivotClass::GTIC;
+                    m_ln = child;
+                    break;
+                }
+            }
+        }
+
+        if (m_ln == nullptr) {
+            throw PivotObjectException("pivot object type not supported");
+        }
+
+        m_identifier = getChildValueStr(m_ln, "Identifier");
+
+        Datapoint* comingFromDp = getChild(m_ln,"ComingFrom");
+
+        if(comingFromDp){
+            m_comingFrom = getChildValueStr(m_ln, "ComingFrom");
+        }
+        Datapoint* cause = getChild(m_ln, "Cause");
+
+        if (cause) {
+            m_cause = getChildValueInt(cause, "stVal");
+        }
+
+        Datapoint* confirmation = getChild(m_ln, "Confirmation");
+
+        if (confirmation) {
+            int confirmationVal = getChildValueInt(confirmation, "stVal");
+
+            if (confirmationVal > 0) {
+                m_confirmation = true;
+            }
+        }
+
+        Datapoint* select = getChild(m_ln, "Select");
+
+        if(select){
+            Datapoint* stVal = getChild(select, "stVal");
+             if (stVal) {
+                    if (getValueInt(stVal) > 0) {
+                        m_select = 1;
+                    }
+                    else {
+                        m_select = 0;
+                    }
+            }
+        }
+
+
+        Datapoint* cdc = getCdc(m_ln);
+
+        if (cdc) {
+            Datapoint* q = getChild(cdc, "q");
+
+            if(q){
+                m_test = getChildValueInt(q,"test");
+            }
+
+            Datapoint* t = getChild(cdc, "t");
+
+            if (t) {
+                m_timestamp = new PivotTimestamp(t);
+            }
+
+            switch (m_pivotCdc) {
+                case PivotCdc::SPC:
+                {
+                    Datapoint* stVal = getChild(cdc, "ctlVal");
+                    if (stVal) {
+                        hasIntVal = true;
+                        intVal = getValueInt(stVal) > 0 ? 1 : 0;
+                    }
+                    break;
+                }
+
+                case PivotCdc::DPC:
+                {
+                    Datapoint* stVal = getChild(cdc, "ctlVal");
+                    if (stVal) {
+                        hasIntVal = true;
+                        string stValStr = getValueStr(stVal);
+
+                        if (stValStr == "intermediate-state") intVal = 0;
+                        else if (stValStr == "off") intVal = 1;
+                        else if (stValStr == "on") intVal = 2;
+                        else if (stValStr == "bad-state") intVal = 3;
+                    }
+                    break;
+                }
+
+                case PivotCdc::INC:
+                {
+                    Datapoint* value = getChild(cdc, "ctlVal");
+                    if (value) {
+                        hasIntVal = true;
+                        intVal = getValueInt(value);
+                    }
+                    break;
+                }
+
+                case PivotCdc::APC:
+                {
+                    Datapoint* value = getChild(cdc, "ctlVal");
+                    if (value) {
+                        hasIntVal = false;
+                        floatVal = getValueFloat(value);
+                    }
+                    break;
+                }
+
+                case PivotCdc::BSC:
+                {
+                    Datapoint* value = getChild(cdc, "ctlVal");
+                    if (value) {
+                        hasIntVal = true;
+                        string valStr = getValueStr(value);
+
+                        if (valStr == "stop") intVal = 0;
+                        else if (valStr == "lower") intVal = 1;
+                        else if (valStr == "higher") intVal = 2;
+                        else if (valStr == "reserved") intVal = 3;
+                    }
+                    break;
+                }
+
+                default:
+                    throw PivotObjectException("CDC type unknown");
+            }
+    }
+    else {
+            throw PivotObjectException("CDC element not found or CDC type unknown");
+        }
+    }
+    else {
+        throw PivotObjectException("No pivot object");
+    }
 }
 
 void
 PivotObject::setIdentifier(const string& identifier)
 {
     addElementWithValue(m_ln, "Identifier", identifier);
+}
+
+
+void
+PivotOperationObject::setSelect(int select)
+{
+    Datapoint* selectDp = addElement(m_ln, "Select");
+    addElementWithValue(selectDp, "stVal", (long)select);
+}
+
+void
+PivotObject::setTest(bool value)
+{
+    Datapoint* q = addElement(m_cdc, "q");
+
+    addElementWithValue(q, "test", (long)value);
 }
 
 void
@@ -569,19 +914,43 @@ PivotObject::setCause(int cause)
 }
 
 void
-PivotObject::setStVal(bool value)
+PivotDataObject::setStVal(bool value)
 {
     addElementWithValue(m_cdc, "stVal", (long)(value ? 1 : 0));
 }
 
 void
-PivotObject::setStValStr(const std::string& value)
+PivotDataObject::setStValStr(const std::string& value)
 {
     addElementWithValue(m_cdc, "stVal", value);
 }
 
 void
-PivotObject::setMagF(float value)
+PivotObject::setCtlValBool(bool value)
+{
+    addElementWithValue(m_cdc, "ctlVal", (long)(value ? 1 : 0));
+}
+
+void
+PivotObject::setCtlValStr(const std::string& value)
+{
+    addElementWithValue(m_cdc, "ctlVal", value);
+}
+
+void
+PivotObject::setCtlValI(int value)
+{
+    addElementWithValue(m_cdc, "ctlVal", (long)value);
+}
+
+void
+PivotObject::setCtlValF(float value)
+{
+    addElementWithValue(m_cdc, "ctlVal", (float)value);
+}
+
+void
+PivotDataObject::setMagF(float value)
 {
     Datapoint* mag = addElement(m_cdc, "mag");
 
@@ -589,11 +958,20 @@ PivotObject::setMagF(float value)
 }
 
 void
-PivotObject::setMagI(int value)
+PivotDataObject::setMagI(int value)
 {
     Datapoint* mag = addElement(m_cdc, "mag");
 
     addElementWithValue(mag, "i", (long)value);
+}
+
+void
+PivotDataObject::setPosVal(int value, bool trans)
+{
+    Datapoint* wtr = addElement(m_cdc, "valWtr");
+
+    addElementWithValue(wtr, "posVal", (long)value);
+    addElementWithValue(wtr, "transInd", (long)trans);
 }
 
 void
@@ -607,7 +985,7 @@ PivotObject::setConfirmation(bool value)
 }
 
 void
-PivotObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
+PivotDataObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
 {
     Datapoint* q = addElement(m_cdc, "q");
 
@@ -620,7 +998,7 @@ PivotObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
         if (ov)
             addElementWithValue(detailQuality, "overflow", (long)1);
     }
-    
+
     if (sb) {
         addElementWithValue(q, "Source", "substituted");
     }
@@ -648,7 +1026,7 @@ PivotObject::addQuality(bool bl, bool iv, bool nt, bool ov, bool sb, bool test)
 }
 
 void
-PivotObject::addTmOrg(bool substituted)
+PivotDataObject::addTmOrg(bool substituted)
 {
     Datapoint* tmOrg = addElement(m_ln, "TmOrg");
 
@@ -659,7 +1037,7 @@ PivotObject::addTmOrg(bool substituted)
 }
 
 void
-PivotObject::addTmValidity(bool invalid)
+PivotDataObject::addTmValidity(bool invalid)
 {
     Datapoint* tmValidity = addElement(m_ln, "TmValidity");
 
@@ -670,15 +1048,14 @@ PivotObject::addTmValidity(bool invalid)
 }
 
 void
-PivotObject::addTimestamp(long ts, bool iv, bool su, bool sub)
+PivotDataObject::addTimestamp(long ts, bool iv, bool su, bool sub)
 {
     Datapoint* t = addElement(m_cdc, "t");
 
-    long remainder = (ts % 1000LL);
-    long fractionOfSecond = (remainder) * 16777 + ((remainder * 216) / 1000);
+    m_timestamp = new PivotTimestamp(ts);
 
-    addElementWithValue(t, "SecondSinceEpoch", ts/1000);
-    addElementWithValue(t, "FractionOfSecond", fractionOfSecond);
+    addElementWithValue(t, "SecondSinceEpoch",(long) m_timestamp->SecondSinceEpoch());
+    addElementWithValue(t, "FractionOfSecond", (long) m_timestamp->FractionOfSecond());
 
     Datapoint* timeQuality = addElement(t, "TimeQuality");
 
@@ -687,8 +1064,19 @@ PivotObject::addTimestamp(long ts, bool iv, bool su, bool sub)
     addElementWithValue(timeQuality, "timeAccuracy", (long)10);
 }
 
+void
+PivotOperationObject::addTimestamp(long ts)
+{
+    Datapoint* t = addElement(m_cdc, "t");
+
+    m_timestamp = new PivotTimestamp(ts);
+
+    addElementWithValue(t, "SecondSinceEpoch",(long) m_timestamp->SecondSinceEpoch());
+    addElementWithValue(t, "FractionOfSecond", (long) m_timestamp->FractionOfSecond());
+}
+
 Datapoint*
-PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
+PivotDataObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 {
     Datapoint* dataObject = createDp("data_object");
 
@@ -713,19 +1101,30 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
         addElementWithValue(dataObject, "do_quality_nt", (long)(OldData() ? 1 : 0));
 
-        if (hasIntVal)
-            addElementWithValue(dataObject, "do_value", intVal);
-        else
-            addElementWithValue(dataObject, "do_value", (double)floatVal);
+        if(m_pivotCdc == PivotCdc::BSC){
+            if(exchangeConfig->getTypeId()[0] == 'M')
+                addElementWithValue(dataObject, "do_value", "["+to_string(intVal)+","+ string(isTransient()?"true":"false") +"]");
+            else
+                addElementWithValue(dataObject, "do_value", intVal);
+        }
+
+        else {
+            if (hasIntVal)
+                addElementWithValue(dataObject, "do_value", intVal);
+            else
+                addElementWithValue(dataObject, "do_value", (double)floatVal);
+        }
 
         if (m_pivotClass == PivotClass::GTIM) {
             addElementWithValue(dataObject, "do_quality_ov", (long)(Overflow() ? 1 : 0));
         }
 
-        if (m_timestamp) {
-            long msPart = ((long)(m_timestamp->FractionOfSecond()) * 1000L) / 16777216L;
+        if(m_pivotClass == PivotClass::GTIC){
+            addElementWithValue(dataObject, "do_negative", (long)(isConfirmation() ? 1 : 0));
+        }
 
-            addElementWithValue(dataObject, "do_ts", ((long)(m_timestamp->SecondSinceEpoch()) * 1000L) + msPart);
+        if (m_timestamp) {
+            addElementWithValue(dataObject, "do_ts", ((long)(uint64_t)m_timestamp->getTimeInMs()));
 
             bool timeInvalid = m_timestamp->ClockFailure() || m_timestamp->ClockNotSynchronized();
 
@@ -734,7 +1133,7 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
             }
 
             //addElementWithValue(dataObject, "do_ts_su", (long)0);
-            
+
             if (IsTimestampSubstituted()) {
                 addElementWithValue(dataObject, "do_ts_sub", (long)1);
             }
@@ -746,4 +1145,55 @@ PivotObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
     }
 
     return dataObject;
+}
+
+std::vector<Datapoint*>
+PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConfig)
+{
+    std::vector<Datapoint*> commandObject;
+
+    string asduType = exchangeConfig->getTypeId();
+
+    Datapoint* type = createDpWithValue("co_type",(std::string) asduType);
+    commandObject.push_back(type);
+
+    Datapoint* ca = createDpWithValue("co_ca",(std::string)to_string(exchangeConfig->getCA()));
+    commandObject.push_back(ca);
+
+    Datapoint* ioa = createDpWithValue("co_ioa",(std::string)to_string(exchangeConfig->getIOA()));
+    commandObject.push_back(ioa);
+
+    Datapoint* cot = createDpWithValue("co_cot",(std::string)to_string(getCause()));
+    commandObject.push_back(cot);
+
+    Datapoint* negative = createDpWithValue("co_negative",(std::string)(to_string(isConfirmation())));
+    commandObject.push_back(negative);
+
+    Datapoint* se = createDpWithValue("co_se",(std::string)(to_string(getSelect())));
+    commandObject.push_back(se);
+
+    Datapoint* test = createDpWithValue("co_test",(std::string)(to_string(Test())));
+    commandObject.push_back(test);
+
+    long time = 0;
+
+    if (m_timestamp) {
+        time = m_timestamp->getTimeInMs();
+    }
+
+    bool hasTime = asduType.find('T') != std::string::npos && time!= 0;
+
+    Datapoint* ts = createDpWithValue("co_ts",(std::string) (hasTime ? to_string(time) : ""));
+    commandObject.push_back(ts);
+
+    Datapoint* value = nullptr;
+
+    if(hasIntVal)
+        value = createDpWithValue("co_value",(std::string) to_string(intVal));
+    else
+        value = createDpWithValue("co_value",(std::string) to_string((double)floatVal));
+
+    commandObject.push_back(value);
+
+    return commandObject;
 }

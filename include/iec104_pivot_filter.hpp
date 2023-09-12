@@ -6,7 +6,7 @@
  * Released under the Apache 2.0 Licence
  *
  * Author: Michael Zillgith (michael.zillgith at mz-automation.de)
- * 
+ *
  */
 
 #ifndef _IEC104_PIVOT_FILTER_H
@@ -43,12 +43,14 @@ private:
 
     Datapoint* createDp(string name);
 
-    template <class T>
-    Datapoint* createDpWithValue(string name, const T value);
+    Datapoint* convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
 
-    Datapoint* convertDatapointToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertOperationObjectToPivot(std::vector<Datapoint*> sourceDp);
 
-    Datapoint* convertDatapointToIEC104(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+
+    std::vector<Datapoint*> convertReadingToIEC104OperationObject(Datapoint* datapoints);
+
 
     OUTPUT_HANDLE* m_outHandle;
     OUTPUT_STREAM m_output;

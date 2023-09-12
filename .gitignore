@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+
+*.idea
+
+/.vscode
+
+build/*
+tests/build/
+cmake-build-debug/*
+
+# Github
+.github*
