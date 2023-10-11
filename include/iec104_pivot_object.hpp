@@ -12,10 +12,8 @@
 #ifndef _IEC104_PIVOT_OBJECT_H
 #define _IEC104_PIVOT_OBJECT_H
 
-#include <plugin_api.h>
-#include <datapoint.h>
-
-#include "iec104_pivot_filter_config.hpp"
+class IEC104PivotDataPoint;
+class Datapoint;
 
 using namespace std;
 

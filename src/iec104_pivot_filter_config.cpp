@@ -11,8 +11,9 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
-#include <logger.h>
+
 #include "iec104_pivot_filter_config.hpp"
+#include "iec104_pivot_utility.hpp"
 
 using namespace rapidjson;
 
@@ -87,7 +88,7 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     Document document;
 
     if (document.Parse(const_cast<char*>(exchangeConfig.c_str())).HasParseError()) {
-        Logger::getLogger()->fatal("Parsing error in data exchange configuration");
+        Iec104PivotUtility::log_fatal("Parsing error in data exchange configuration");
 
         return;
     }

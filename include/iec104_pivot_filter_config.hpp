@@ -13,7 +13,6 @@
 #define PIVOT_IEC104_CONFIG_H
 
 #include <map>
-#include <vector>
 #include <memory>
 
 using namespace std;

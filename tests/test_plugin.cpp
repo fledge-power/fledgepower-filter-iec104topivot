@@ -1,13 +1,10 @@
 #include <gtest/gtest.h>
-#include <plugin_api.h>
 #include <reading.h>
 #include <reading_set.h>
 #include <filter.h>
-#include <string.h>
 #include <string>
-#include <chrono>
-#include <thread>
 #include <rapidjson/document.h>
+
 #include "iec104_pivot_object.hpp"
 
 using namespace std;

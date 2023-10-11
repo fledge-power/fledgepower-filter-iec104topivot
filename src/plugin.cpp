@@ -10,16 +10,12 @@
  */
 
 #include <plugin_api.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-#include <string>
-#include <logger.h>
 #include <plugin_exception.h>
-#include <iostream>
 #include <config_category.h>
 #include <version.h>
+
 #include "iec104_pivot_filter.hpp"
+#include "iec104_pivot_utility.hpp"
 
 
 using namespace std;
@@ -133,7 +129,7 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
                           OUTPUT_HANDLE *outHandle,
                           OUTPUT_STREAM output)
 {
-    Logger::getLogger()->info("Initializing the plugin");
+    Iec104PivotUtility::log_info("Initializing the plugin");
 
     IEC104PivotFilter* pivotFilter = new IEC104PivotFilter(PLUGIN_NAME,
                                 config, outHandle, output);

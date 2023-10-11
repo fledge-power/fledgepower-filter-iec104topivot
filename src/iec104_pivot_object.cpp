@@ -9,9 +9,13 @@
  *
  */
 
-#include "iec104_pivot_object.hpp"
 
 #include <sys/time.h>
+#include <datapoint.h>
+
+#include "iec104_pivot_filter_config.hpp"
+#include "iec104_pivot_object.hpp"
+#include "iec104_pivot_utility.hpp"
 
 static Datapoint*
 createDp(const string& name)
