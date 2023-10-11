@@ -10,7 +10,6 @@
  */
 
 #include <plugin_api.h>
-#include <plugin_exception.h>
 #include <config_category.h>
 #include <version.h>
 
@@ -22,8 +21,6 @@ using namespace std;
 using namespace rapidjson;
 
 extern "C" {
-
-#define PLUGIN_NAME "iec104_pivot_filter"
 
 /**
  * Plugin specific default configuration
@@ -129,7 +126,8 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
                           OUTPUT_HANDLE *outHandle,
                           OUTPUT_STREAM output)
 {
-    Iec104PivotUtility::log_info("Initializing the plugin");
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - plugin_init -";
+    Iec104PivotUtility::log_info("%s Initializing the plugin", beforeLog.c_str());
 
     IEC104PivotFilter* pivotFilter = new IEC104PivotFilter(PLUGIN_NAME,
                                 config, outHandle, output);

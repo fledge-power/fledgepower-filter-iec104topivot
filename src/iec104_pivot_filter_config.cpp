@@ -81,6 +81,7 @@ IEC104PivotConfig::getExchangeDefinitionsByPivotId(std::string pivotid){
 void
 IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 {
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::importExchangeConfig -";
     m_exchangeConfigComplete = false;
 
     deleteExchangeDefinitions();
@@ -88,7 +89,7 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     Document document;
 
     if (document.Parse(const_cast<char*>(exchangeConfig.c_str())).HasParseError()) {
-        Iec104PivotUtility::log_fatal("Parsing error in data exchange configuration");
+        Iec104PivotUtility::log_fatal("%s Parsing error in data exchange configuration", beforeLog.c_str());
 
         return;
     }
