@@ -53,12 +53,12 @@ private:
 
     void handleTimeQuality(Datapoint* timeQuality);
 
-    uint8_t* m_valueArray;
+    uint8_t* m_valueArray = nullptr;
 
-    int m_secondSinceEpoch;
-    int m_fractionOfSecond;
+    int m_secondSinceEpoch = 0;
+    int m_fractionOfSecond = 0;
 
-    int m_timeAccuracy;
+    int m_timeAccuracy = 0;
     bool m_clockFailure = false;
     bool m_leapSecondKnown = false;
     bool m_clockNotSynchronized = false;
@@ -110,9 +110,9 @@ protected:
 
     Datapoint* getCdc(Datapoint* dp);
 
-    Datapoint* m_dp;
-    Datapoint* m_ln;
-    Datapoint* m_cdc;
+    Datapoint* m_dp = nullptr;
+    Datapoint* m_ln = nullptr;
+    Datapoint* m_cdc = nullptr;
     PivotClass m_pivotClass;
     PivotCdc m_pivotCdc;
 

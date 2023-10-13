@@ -33,47 +33,40 @@ IEC104PivotDataPoint::~IEC104PivotDataPoint()
 
 }
 
-IEC104PivotConfig::IEC104PivotConfig()
-{
-    m_exchangeConfigComplete = false;
-}
-
-IEC104PivotConfig::~IEC104PivotConfig()
-{
-    deleteExchangeDefinitions();
-}
-
 #define PROTOCOL_IEC104 "iec104"
 #define JSON_PROT_NAME "name"
 #define JSON_PROT_ADDR "address"
 #define JSON_PROT_TYPEID "typeid"
 
-IEC104PivotDataPoint* 
-IEC104PivotConfig::getExchangeDefinitionsByLabel(std::string label){
+IEC104PivotDataPoint*
+IEC104PivotConfig::getExchangeDefinitionsByLabel(std::string label) {
     auto it = m_exchangeDefinitionsLabel.find(label);
     if (it != m_exchangeDefinitionsLabel.end()) {
         return it->second.get();
-    } else {
+    }
+    else {
         return nullptr;
     }
 }
 
-IEC104PivotDataPoint* 
-IEC104PivotConfig::getExchangeDefinitionsByAddress(std::string address){
+IEC104PivotDataPoint*
+IEC104PivotConfig::getExchangeDefinitionsByAddress(std::string address) {
     auto it = m_exchangeDefinitionsAddress.find(address);
     if (it != m_exchangeDefinitionsAddress.end()) {
         return it->second.get();
-    } else {
+    }
+    else {
         return nullptr;
     }
 }
 
-IEC104PivotDataPoint* 
-IEC104PivotConfig::getExchangeDefinitionsByPivotId(std::string pivotid){
+IEC104PivotDataPoint*
+IEC104PivotConfig::getExchangeDefinitionsByPivotId(std::string pivotid) {
     auto it = m_exchangeDefinitionsPivotId.find(pivotid);
     if (it != m_exchangeDefinitionsPivotId.end()) {
         return it->second.get();
-    } else {
+    }
+    else {
         return nullptr;
     }
 }
@@ -84,28 +77,23 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::importExchangeConfig -";
     m_exchangeConfigComplete = false;
 
-    deleteExchangeDefinitions();
+    m_deleteExchangeDefinitions();
 
     Document document;
 
     if (document.Parse(const_cast<char*>(exchangeConfig.c_str())).HasParseError()) {
-        Iec104PivotUtility::log_fatal("%s Parsing error in data exchange configuration", beforeLog.c_str());
-
+        Iec104PivotUtility::log_fatal("%s Parsing error in exchanged_data json, offset %u: %s", beforeLog.c_str(),
+                                    static_cast<unsigned>(document.GetErrorOffset()), GetParseError_En(document.GetParseError()));
         return;
     }
 
-    if (!document.IsObject())
-        return;
+    if (!document.IsObject()) return;
 
-    if (!document.HasMember("exchanged_data") || !document["exchanged_data"].IsObject()) {
-        return;
-    }
+    if (!m_check_object(document, "exchanged_data")) return;
 
     const Value& exchangeData = document["exchanged_data"];
 
-    if (!exchangeData.HasMember("datapoints") || !exchangeData["datapoints"].IsArray()) {
-        return;
-    }
+    if (!m_check_array(exchangeData, "datapoints")) return;
 
     const Value& datapoints = exchangeData["datapoints"];
 
@@ -113,38 +101,35 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     {
         if (!datapoint.IsObject()) return;
 
-        if (!datapoint.HasMember("label") || !datapoint["label"].IsString()) return;
+        string label;
+        if (!m_retrieve(datapoint, "label", &label)) return;
 
-        string label = datapoint["label"].GetString();
+        string pivotId;
+        if (!m_retrieve(datapoint, "pivot_id", &pivotId)) return;
 
-        if (!datapoint.HasMember("pivot_id") || !datapoint["pivot_id"].IsString()) return;
+        string pivotType;
+        if (!m_retrieve(datapoint, "pivot_type", &pivotType)) return;
 
-        string pivotId = datapoint["pivot_id"].GetString();
-
-        if (!datapoint.HasMember("pivot_type") || !datapoint["pivot_type"].IsString()) return;
-
-        string pivotType = datapoint["pivot_type"].GetString();
-
-        if (!datapoint.HasMember("protocols") || !datapoint["protocols"].IsArray()) return;
+        if (!m_check_array(datapoint, "protocols")) return;
 
         for (const Value& protocol : datapoint["protocols"].GetArray()) {
 
-            if (!protocol.HasMember("name") || !protocol["name"].IsString()) return;
-
-            string protocolName = protocol["name"].GetString();
+            if (!protocol.IsObject()) return;
+            
+            string protocolName;
+            if (!m_retrieve(protocol, JSON_PROT_NAME, &protocolName)) return;
 
             if (protocolName == PROTOCOL_IEC104)
             {
-                if (!protocol.HasMember(JSON_PROT_ADDR) || !protocol[JSON_PROT_ADDR].IsString()) return;
-                if (!protocol.HasMember(JSON_PROT_TYPEID) || !protocol[JSON_PROT_TYPEID].IsString()) return;
+                string address;
+                if (!m_retrieve(protocol, JSON_PROT_ADDR, &address)) return;
 
-                string address = protocol[JSON_PROT_ADDR].GetString();
-                string typeIdStr = protocol[JSON_PROT_TYPEID].GetString();
-
-                string alternateMappingRule = "";
-
+                string typeIdStr;
+                if (!m_retrieve(protocol, JSON_PROT_TYPEID, &typeIdStr)) return;
+                
+                string alternateMappingRule;
                 if (protocol.HasMember("alternate_mapping_rule")) {
-                    alternateMappingRule = protocol["alternate_mapping_rule"].GetString();
+                    m_retrieve(protocol, "alternate_mapping_rule", &alternateMappingRule);
                 }
 
                 size_t sepPos = address.find("-");
@@ -153,8 +138,20 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
                     std::string caStr = address.substr(0, sepPos);
                     std::string ioaStr = address.substr(sepPos + 1);
 
-                    int ca = std::stoi(caStr);
-                    int ioa = std::stoi(ioaStr);
+                    int ca = 0;
+                    int ioa = 0;
+                    try {
+                        ca = std::stoi(caStr);
+                        ioa = std::stoi(ioaStr);
+                    } catch (const std::invalid_argument &e) {
+                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s",
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                        return;
+                    } catch (const std::out_of_range &e) {
+                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s",
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                        return;
+                    }
 
                     auto newDp = std::make_shared<IEC104PivotDataPoint>(label, pivotId, pivotType, typeIdStr, ca, ioa, alternateMappingRule);
 
@@ -169,10 +166,47 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     m_exchangeConfigComplete = true;
 }
 
-void 
-IEC104PivotConfig::deleteExchangeDefinitions()
+void
+IEC104PivotConfig::m_deleteExchangeDefinitions()
 {
     m_exchangeDefinitionsLabel.clear();
     m_exchangeDefinitionsAddress.clear();
     m_exchangeDefinitionsPivotId.clear();
+}
+
+bool IEC104PivotConfig::m_check_string(const rapidjson::Value& json, const char* key) {
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_string -";
+    if (!json.HasMember(key) || !json[key].IsString()) {
+        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key);
+        return false;
+    }
+    return true;
+}
+
+bool IEC104PivotConfig::m_check_array(const rapidjson::Value& json, const char* key) {
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_array -";
+    if (!json.HasMember(key) || !json[key].IsArray()) {
+        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key);
+        return false;
+    }
+    return true;
+}
+
+bool IEC104PivotConfig::m_check_object(const rapidjson::Value& json, const char* key) {
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_object -";
+    if (!json.HasMember(key) || !json[key].IsObject()) {
+        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key);
+        return false;
+    }
+    return true;
+}
+
+bool IEC104PivotConfig::m_retrieve(const rapidjson::Value& json, const char* key, std::string* target) {
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_retrieve -";
+    if (!json.HasMember(key) || !json[key].IsString()) {
+        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key);
+        return false;
+    }
+    *target = json[key].GetString();
+    return true;
 }

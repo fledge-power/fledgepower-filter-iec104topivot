@@ -13,6 +13,7 @@
 #define _IEC104_PIVOT_UTILITY_H
 
 #include <string>
+#include <vector>
 #include <logger.h>
 
 #define PLUGIN_NAME "iec104_pivot_filter"
@@ -20,6 +21,14 @@
 namespace Iec104PivotUtility {
 
     static const std::string PluginName = PLUGIN_NAME;
+
+    /**
+     * Join a list of strings into a single string with the given separator
+     * @param list : List of strings to join
+     * @param sep : Separator to put bewteen each list element
+     * @return String containing the concatenation of all strings in the list with separator inbetween
+    */
+    std::string join(const std::vector<std::string> &list, const std::string &sep = ", ");
 
     /*
      * Log helper function that will log both in the Fledge syslog file and in stdout for unit tests
