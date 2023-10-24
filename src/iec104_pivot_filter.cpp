@@ -1121,16 +1121,20 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         }
                     }
                     else {
+                        Iec104PivotUtility::log_debug("%s Unhandled datapoint type '%s', forwarding reading unchanged",
+                                                    beforeLog.c_str(), dp->getName().c_str());
                         Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
                         convertedDatapoints.push_back(dpCopy);
                     }
                 }
             }
             else {
-                 for (Datapoint* dp : datapoints) {
-                        Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
-                        convertedDatapoints.push_back(dpCopy);
-                    }
+                Iec104PivotUtility::log_debug("%s Asset '%s' not found in exchangedData, forwarding reading unchanged",
+                                            beforeLog.c_str(), assetName.c_str());
+                for (Datapoint* dp : datapoints) {
+                    Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
+                    convertedDatapoints.push_back(dpCopy);
+                }
             }
 
         }
