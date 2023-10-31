@@ -706,13 +706,12 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         }
 
         else if ((hasCoTs == false) && (dp->getName() == "co_ts")) {
-            if (dp->getData().getType() == DatapointValue::T_INTEGER){ 
+            if (dp->getData().getType() == DatapointValue::T_INTEGER && dp->getData().toInt() != 0){ 
                 hasCoTs = true;
                 coTs = dp->getData().toInt();
             }
             else {
-                if(dp->getData().toStringValue()!= "")
-                    Logger::getLogger()->error("Timestamp input data type invalid for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
+                Logger::getLogger()->error("Timestamp input data type invalid for %s-%s ", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
             }
         }
 

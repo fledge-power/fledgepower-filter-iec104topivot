@@ -435,37 +435,37 @@ static Datapoint* createDatapoint(const std::string& dataname,
     return new Datapoint(dataname, dp_value);
 }
 
-
-static std::vector<Datapoint*> createCommandObject(const char* type, const char* ca, const char* ioa, const char* cot,
-    const char* negative, const char* se, const char* test, const char* ts, const char* value)
+template <class T>
+static std::vector<Datapoint*> createCommandObject(const char* type, long ca, long ioa, long cot,
+    long negative, long se, long test, long ts, const T value)
     {
     std::vector<Datapoint*> commandObject;
 
     Datapoint* type1 = createDatapoint("co_type",(std::string)type);
     commandObject.push_back(type1);
 
-    Datapoint* ca1 = createDatapoint("co_ca",(std::string)ca);
+    Datapoint* ca1 = createDatapoint("co_ca",(long)ca);
     commandObject.push_back(ca1);
 
-    Datapoint* ioa1 = createDatapoint("co_ioa",(std::string)ioa);
+    Datapoint* ioa1 = createDatapoint("co_ioa",(long)ioa);
     commandObject.push_back(ioa1);
 
-    Datapoint* cot1 = createDatapoint("co_cot",(std::string)cot);
+    Datapoint* cot1 = createDatapoint("co_cot",(long)cot);
     commandObject.push_back(cot1);
 
-    Datapoint* negative1 = createDatapoint("co_negative",(std::string)negative);
+    Datapoint* negative1 = createDatapoint("co_negative",(long)negative);
     commandObject.push_back(negative1);
 
-    Datapoint* se1 = createDatapoint("co_se",(std::string)se);
+    Datapoint* se1 = createDatapoint("co_se",(long)se);
     commandObject.push_back(se1);
 
-    Datapoint* test1 = createDatapoint("co_test",(std::string)test);
+    Datapoint* test1 = createDatapoint("co_test",(long)test);
     commandObject.push_back(test1);
 
-    Datapoint* ts1 = createDatapoint("co_ts",(std::string)ts);
+    Datapoint* ts1 = createDatapoint("co_ts",(long)ts);
     commandObject.push_back(ts1);
 
-    Datapoint* value1 = createDatapoint("co_value",(std::string) value);
+    Datapoint* value1 = createDatapoint("co_value", value);
     commandObject.push_back(value1);
 
     return commandObject;
@@ -793,7 +793,7 @@ TEST(PivotIEC104Plugin, OperationPlugin_ingest_1)
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "988", "3", "0", "0", "0", "2421512", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", 45, 988, 3, 0, 0, 0, 2421512, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -2504,7 +2504,7 @@ TEST(PivotIEC104Plugin, OperationPivotToOperationObjectTStrue) {
 
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
     ASSERT_NE(nullptr,co_ts);
-    ASSERT_EQ(getValueStr(co_ts),to_string(timestamp));
+    ASSERT_EQ(getValueInt(co_ts),timestamp);
 
     plugin_shutdown(handle);
 }
@@ -2573,35 +2573,35 @@ TEST(PivotIEC104Plugin, OperationMultConversionsWithTimestamp) {
 
             Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
             ASSERT_NE(nullptr,co_ca);
-            ASSERT_EQ("45",getValueStr(co_ca));
+            ASSERT_EQ(45,getValueInt(co_ca));
 
             Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
             ASSERT_NE(nullptr,co_ioa);
-            ASSERT_EQ("998",getValueStr(co_ioa));
+            ASSERT_EQ(998,getValueInt(co_ioa));
 
             Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
             ASSERT_NE(nullptr,co_cot);
-            ASSERT_EQ("3",getValueStr(co_cot));
+            ASSERT_EQ(3,getValueInt(co_cot));
 
             Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
             ASSERT_NE(nullptr,co_negative);
-            ASSERT_EQ("0",getValueStr(co_negative));
+            ASSERT_EQ(0,getValueInt(co_negative));
 
             Datapoint* co_se = getDatapoint(lastReading,"co_se");
             ASSERT_NE(nullptr,co_se);
-            ASSERT_EQ("0",getValueStr(co_se));
+            ASSERT_EQ(0,getValueInt(co_se));
 
             Datapoint* co_test = getDatapoint(lastReading,"co_test");
             ASSERT_NE(nullptr,co_test);
-            ASSERT_EQ("0",getValueStr(co_test));
+            ASSERT_EQ(0,getValueInt(co_test));
 
             Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
             ASSERT_NE(nullptr,co_ts);
-            ASSERT_EQ("1669123796250",getValueStr(co_ts));
+            ASSERT_EQ(1669123796250,getValueInt(co_ts));
 
             Datapoint* co_value = getDatapoint(lastReading,"co_value");
             ASSERT_NE(nullptr,co_value);
-            ASSERT_EQ("0",getValueStr(co_value));
+            ASSERT_EQ(0,getValueInt(co_value));
 
             plugin_ingest(handle, &readingSet);
 
@@ -2695,15 +2695,15 @@ TEST(PivotIEC104Plugin,OperationDefaultValues) {
 
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
     ASSERT_NE(nullptr,co_negative);
-    ASSERT_EQ(getValueStr(co_negative),to_string(0));
+    ASSERT_EQ(getValueInt(co_negative),0);
 
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
     ASSERT_NE(nullptr,co_se);
-    ASSERT_EQ(getValueStr(co_se),"0");
+    ASSERT_EQ(getValueInt(co_se),0);
 
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
     ASSERT_NE(nullptr,co_test);
-    ASSERT_EQ(getValueStr(co_test),to_string(0));
+    ASSERT_EQ(getValueInt(co_test),0);
 
     plugin_shutdown(handle);
 }
@@ -3145,7 +3145,7 @@ TEST(PivotIEC104Plugin, OperationAutomaticPivotTimestamps) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_NA_1", "45", "999", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_NA_1", 45, 999, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3199,7 +3199,7 @@ TEST(PivotIEC104Plugin, OperationAutomaticPivotTimestamps) {
 
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
     ASSERT_NE(nullptr,co_ts);
-    ASSERT_EQ("",getValueStr(co_ts));
+    ASSERT_EQ(0,getValueInt(co_ts));
 
     plugin_shutdown(handle);
 }
@@ -3209,7 +3209,7 @@ TEST(PivotIEC104Plugin, OperationNoTimestampIEC104Command) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_TA_1", "45", "998", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", 45, 998, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3393,7 +3393,7 @@ TEST(PivotIEC104Plugin, SingleCommand) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_NA_1", "1", "101", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_NA_1", 1, 101, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3464,49 +3464,49 @@ TEST(PivotIEC104Plugin, SingleCommand) {
     
     ASSERT_NE(nullptr,co_ca);
     
-    ASSERT_EQ("1",getValueStr(co_ca));
+    ASSERT_EQ(1,getValueInt(co_ca));
     
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
     
     ASSERT_NE(nullptr,co_ioa);
     
-    ASSERT_EQ("101",getValueStr(co_ioa));
+    ASSERT_EQ(101,getValueInt(co_ioa));
     
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
     
     ASSERT_NE(nullptr,co_cot);
     
-    ASSERT_EQ("3",getValueStr(co_cot));
+    ASSERT_EQ(3,getValueInt(co_cot));
     
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
     
     ASSERT_NE(nullptr,co_negative);
     
-    ASSERT_EQ("0",getValueStr(co_negative));
+    ASSERT_EQ(0,getValueInt(co_negative));
     
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
     
     ASSERT_NE(nullptr,co_se);
     
-    ASSERT_EQ("0",getValueStr(co_se));
+    ASSERT_EQ(0,getValueInt(co_se));
     
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
     
     ASSERT_NE(nullptr,co_test);
     
-    ASSERT_EQ("0",getValueStr(co_test));
+    ASSERT_EQ(0,getValueInt(co_test));
     
     // Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
     
     // ASSERT_NE(nullptr,co_ts);
     
-    // ASSERT_EQ("1669123796250",getValueStr(co_ts));
-    
+    // ASSERT_EQ(1669123796250, getValueInt(...));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1,getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -3516,7 +3516,7 @@ TEST(PivotIEC104Plugin, SingleCommandTime) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SC_TA_1", "1", "106", "3", "0", "0", "0", "100", "1"));
+    commandobjects.push_back(createCommandObject("C_SC_TA_1", 1, 106, 3, 0, 0, 0, 100, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3540,96 +3540,96 @@ TEST(PivotIEC104Plugin, SingleCommandTime) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"SpcTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ(1,getValueInt(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_SC_TA_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1,getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("106",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(106,getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3,getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0,getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0,getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0,getValueInt(co_test));
+
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     ASSERT_NE(nullptr,co_ts);
-    
-    ASSERT_EQ("100",getValueStr(co_ts));
-    
+
+    ASSERT_EQ(100,getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1,getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -3639,7 +3639,7 @@ TEST(PivotIEC104Plugin, DoubleCommand) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_DC_NA_1", "1", "102", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_DC_NA_1", 1, 102, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3663,96 +3663,96 @@ TEST(PivotIEC104Plugin, DoubleCommand) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"DpcTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ("off",getValueStr(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_DC_NA_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1,getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("102",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(102,getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0 ,getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0 ,getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     // Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     // ASSERT_NE(nullptr,co_ts);
-    
-    // ASSERT_EQ("1669123796250",getValueStr(co_ts));
-    
+
+    // ASSERT_EQ(1669123796250, getValueInt(...));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -3762,7 +3762,7 @@ TEST(PivotIEC104Plugin, DoubleCommandTime) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_DC_TA_1", "1", "107", "3", "0", "0", "0", "100", "1"));
+    commandobjects.push_back(createCommandObject("C_DC_TA_1", 1, 107, 3, 0, 0, 0, 100, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3786,96 +3786,96 @@ TEST(PivotIEC104Plugin, DoubleCommandTime) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"DpcTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ("off",getValueStr(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_DC_TA_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1,getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("107",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(107,getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3,getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0,getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     ASSERT_NE(nullptr,co_ts);
-    
-    ASSERT_EQ("100",getValueStr(co_ts));
-    
+
+    ASSERT_EQ(100, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -3885,7 +3885,7 @@ TEST(PivotIEC104Plugin, SetPointCommandScaled) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SE_NB_1", "1", "104", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_SE_NB_1", 1, 104, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -3909,96 +3909,97 @@ TEST(PivotIEC104Plugin, SetPointCommandScaled) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"IncTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ(1,getValueInt(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_SE_NB_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("104",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(104, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3,getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0,getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0,getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0,getValueInt(co_test));
+
     // Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     // ASSERT_NE(nullptr,co_ts);
-    
-    // ASSERT_EQ("1669123796250",getValueStr(co_ts));
-    
+
+    // ASSERT_EQ(1669123796250, getValueInt(...));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt
+(co_value));
 
     plugin_shutdown(handle);
 }
@@ -4008,7 +4009,7 @@ TEST(PivotIEC104Plugin, SetPointCommandScaledTime) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SE_TB_1", "1", "109", "3", "0", "0", "0", "100", "1"));
+    commandobjects.push_back(createCommandObject("C_SE_TB_1", 1, 109, 3, 0, 0, 0, 100, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -4032,96 +4033,96 @@ TEST(PivotIEC104Plugin, SetPointCommandScaledTime) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"IncTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ(1,getValueInt(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_SE_TB_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("109",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(109, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0, getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     ASSERT_NE(nullptr,co_ts);
-    
-    ASSERT_EQ("100",getValueStr(co_ts));
-    
+
+    ASSERT_EQ(100, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -4131,7 +4132,7 @@ TEST(PivotIEC104Plugin, SetPointCommandShort) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SE_NC_1", "1", "100", "3", "0", "0", "0", "", "1.5"));
+    commandobjects.push_back(createCommandObject("C_SE_NC_1", 1, 100, 3, 0, 0, 0, 0, (double)1.5));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -4155,96 +4156,96 @@ TEST(PivotIEC104Plugin, SetPointCommandShort) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"ApcTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ(1.5f,getValueFloat(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_SE_NC_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("100",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(100, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0, getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     // Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     // ASSERT_NE(nullptr,co_ts);
-    
-    // ASSERT_EQ("1669123796250",getValueStr(co_ts));
-    
+
+    // ASSERT_EQ(1669123796250, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ(1.5f,stof(getValueStr(co_value)));
+
+    ASSERT_EQ(1.5f,getValueFloat(co_value));
 
     plugin_shutdown(handle);
 }
@@ -4254,7 +4255,7 @@ TEST(PivotIEC104Plugin, SetPointCommandShortTime) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_SE_TC_1", "1", "105", "3", "0", "0", "0", "100", "1.5"));
+    commandobjects.push_back(createCommandObject("C_SE_TC_1", 1, 105, 3, 0, 0, 0, 100, (double)1.5));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -4278,96 +4279,96 @@ TEST(PivotIEC104Plugin, SetPointCommandShortTime) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"ApcTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ(1.5,getValueFloat(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_SE_TC_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("105",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(105, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0, getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     ASSERT_NE(nullptr,co_ts);
-    
-    ASSERT_EQ("100",getValueStr(co_ts));
-    
+
+    ASSERT_EQ(100, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ(1.5f,stof(getValueStr(co_value)));
+
+    ASSERT_EQ(1.5f,getValueFloat(co_value));
 
     plugin_shutdown(handle);
 }
@@ -4377,7 +4378,7 @@ TEST(PivotIEC104Plugin, StepCommand) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_RC_NA_1", "1", "110", "3", "0", "0", "0", "", "1"));
+    commandobjects.push_back(createCommandObject("C_RC_NA_1", 1, 110, 3, 0, 0, 0, 0, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -4401,96 +4402,96 @@ TEST(PivotIEC104Plugin, StepCommand) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"BscTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ("lower",getValueStr(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_RC_NA_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("110",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(110, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0, getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     // Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     // ASSERT_NE(nullptr,co_ts);
-    
-    // ASSERT_EQ("1669123796250",getValueStr(co_ts));
-    
+
+    // ASSERT_EQ(1669123796250, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
@@ -4500,7 +4501,7 @@ TEST(PivotIEC104Plugin, StepCommandTime) {
 
     vector<vector<Datapoint*>> commandobjects;
 
-    commandobjects.push_back(createCommandObject("C_RC_TA_1", "1", "111", "3", "0", "0", "0", "100", "1"));
+    commandobjects.push_back(createCommandObject("C_RC_TA_1", 1, 111, 3, 0, 0, 0, 100, (long)1));
 
     Reading* reading = new Reading(std::string("IEC104Command"), commandobjects[0]);
 
@@ -4524,96 +4525,96 @@ TEST(PivotIEC104Plugin, StepCommandTime) {
     plugin_ingest(handle, &readingSet);
 
     ASSERT_EQ(1, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* command = getDatapoint(lastReading,"PIVOT");
-    
+
     ASSERT_NE(nullptr,command);
-    
+
     Datapoint* root = getChild(command,"GTIC");
-    
+
     ASSERT_NE(nullptr,root);
-    
+
     Datapoint* comingFrom = getChild(root,"ComingFrom");
-    
+
     ASSERT_NE(nullptr,comingFrom);
-    
+
     ASSERT_EQ(getValueStr(comingFrom),"iec104");
-    
+
     Datapoint* spcType = getChild(root,"BscTyp");
-    
+
     ASSERT_NE(nullptr,spcType);
-    
+
     Datapoint* ctlVal = getChild(spcType,"ctlVal");
-    
+
     ASSERT_NE(nullptr,ctlVal);
-    
+
     ASSERT_EQ("lower",getValueStr(ctlVal));
-    
+
     Datapoint* t = getChild(spcType,"t");
-    
+
     ASSERT_NE(nullptr,t);
-    
+
     plugin_ingest(handle, &readingSet);
-    
+
     ASSERT_EQ(2, outputHandlerCalled);
-    
+
     ASSERT_NE(nullptr, lastReading);
-    
+
     Datapoint* co_type = getDatapoint(lastReading,"co_type");
-    
+
     ASSERT_NE(nullptr,co_type);
-    
+
     ASSERT_EQ("C_RC_TA_1",getValueStr(co_type));
-    
+
     Datapoint* co_ca = getDatapoint(lastReading,"co_ca");
-    
+
     ASSERT_NE(nullptr,co_ca);
-    
-    ASSERT_EQ("1",getValueStr(co_ca));
-    
+
+    ASSERT_EQ(1, getValueInt(co_ca));
+
     Datapoint* co_ioa = getDatapoint(lastReading,"co_ioa");
-    
+
     ASSERT_NE(nullptr,co_ioa);
-    
-    ASSERT_EQ("111",getValueStr(co_ioa));
-    
+
+    ASSERT_EQ(111, getValueInt(co_ioa));
+
     Datapoint* co_cot = getDatapoint(lastReading,"co_cot");
-    
+
     ASSERT_NE(nullptr,co_cot);
-    
-    ASSERT_EQ("3",getValueStr(co_cot));
-    
+
+    ASSERT_EQ(3, getValueInt(co_cot));
+
     Datapoint* co_negative = getDatapoint(lastReading,"co_negative");
-    
+
     ASSERT_NE(nullptr,co_negative);
-    
-    ASSERT_EQ("0",getValueStr(co_negative));
-    
+
+    ASSERT_EQ(0, getValueInt(co_negative));
+
     Datapoint* co_se = getDatapoint(lastReading,"co_se");
-    
+
     ASSERT_NE(nullptr,co_se);
-    
-    ASSERT_EQ("0",getValueStr(co_se));
-    
+
+    ASSERT_EQ(0, getValueInt(co_se));
+
     Datapoint* co_test = getDatapoint(lastReading,"co_test");
-    
+
     ASSERT_NE(nullptr,co_test);
-    
-    ASSERT_EQ("0",getValueStr(co_test));
-    
+
+    ASSERT_EQ(0, getValueInt(co_test));
+
     Datapoint* co_ts = getDatapoint(lastReading,"co_ts");
-    
+
     ASSERT_NE(nullptr,co_ts);
-    
-    ASSERT_EQ("100",getValueStr(co_ts));
-    
+
+    ASSERT_EQ(100, getValueInt(co_ts));
+
     Datapoint* co_value = getDatapoint(lastReading,"co_value");
-    
+
     ASSERT_NE(nullptr,co_value);
-    
-    ASSERT_EQ("1",getValueStr(co_value));
+
+    ASSERT_EQ(1, getValueInt(co_value));
 
     plugin_shutdown(handle);
 }
