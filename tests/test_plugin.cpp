@@ -1,13 +1,10 @@
 #include <gtest/gtest.h>
-#include <plugin_api.h>
 #include <reading.h>
 #include <reading_set.h>
 #include <filter.h>
-#include <string.h>
 #include <string>
-#include <chrono>
-#include <thread>
 #include <rapidjson/document.h>
+
 #include "iec104_pivot_object.hpp"
 
 using namespace std;
@@ -612,14 +609,6 @@ getChild(Datapoint* dp, const string& name)
     }
 
     return childDp;
-}
-
-bool
-is_Int(const std::string& s)
-{
-    std::string::const_iterator it = s.begin();
-    while (it != s.end() && std::isdigit(*it)) ++it;
-    return !s.empty() && it == s.end();
 }
 
 static bool

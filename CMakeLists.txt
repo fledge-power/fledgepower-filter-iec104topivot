@@ -96,8 +96,7 @@ endif()
 
 
 # Create shared library
-add_library(${PROJECT_NAME} SHARED ${SOURCES} version.h
-        tests/test_plugin.cpp)
+add_library(${PROJECT_NAME} SHARED ${SOURCES} version.h)
 
 # Add Fledge library names
 target_link_libraries(${PROJECT_NAME} ${NEEDED_FLEDGE_LIBS})
