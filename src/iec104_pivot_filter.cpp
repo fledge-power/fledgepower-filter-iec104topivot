@@ -641,16 +641,17 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
 
     for(Datapoint* dp : datapoints){
         if ((dp->getName() == "co_ioa")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                coIoa =  dp->getData().toStringValue();
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                coIoa =  std::to_string(dp->getData().toInt());
             }
         }
         else if ((dp->getName() == "co_ca")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                coCa =  dp->getData().toStringValue();
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                coCa =  std::to_string(dp->getData().toInt());
             }
         }
     }
+    Logger::getLogger()->warn("CA : %s IOA : %s", coCa.c_str(), coIoa.c_str());
 
     IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByAddress(coCa+"-"+coIoa);
 
@@ -674,8 +675,8 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             }
         }
         else if ((hasCoCot == false) && (dp->getName() == "co_cot")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())) {
-                int value = stoi(dp->getData().toStringValue());
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                int value = dp->getData().toInt();
 
                 if(value >= 0 && value <=63){
                     coCot =  value;
@@ -691,13 +692,8 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             }
         }
         else if ((hasSe == false) && (dp->getName() == "co_se")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING) {
-                string coSeStr =  dp->getData().toStringValue();
-
-                if(!coSeStr.empty()){
-                    hasSe = true;
-                    coSe = stoi(coSeStr);
-                }
+            if (dp->getData().getType() == DatapointValue::T_INTEGER) {
+                 coSe =  dp->getData().toInt();
             }
             else {
                 Logger::getLogger()->warn("Select input data type invalid for %s-%s , defaulting to execute", to_string(exchangeConfig->getCA()).c_str(),to_string(exchangeConfig->getIOA()).c_str());
@@ -710,9 +706,9 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         }
 
         else if ((hasCoTs == false) && (dp->getName() == "co_ts")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())){
+            if (dp->getData().getType() == DatapointValue::T_INTEGER){ 
                 hasCoTs = true;
-                coTs =  stol(dp->getData().toStringValue());
+                coTs = dp->getData().toInt();
             }
             else {
                 if(dp->getData().toStringValue()!= "")
@@ -721,9 +717,8 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         }
 
         else if ((hasCoTest == false) && (dp->getName() == "co_test")) {
-            if (dp->getData().getType() == DatapointValue::T_STRING && is_int(dp->getData().toStringValue())){
-                int value = stoi(dp->getData().toStringValue());
-
+            if (dp->getData().getType() == DatapointValue::T_INTEGER ){
+                int value = dp->getData().toInt();
                 if (value == 1){
                     coTest = true;
                     hasCoTest = true;
@@ -772,8 +767,8 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             if (coValue) {
                 bool spsValue = false;
 
-                if (coValue->getData().getType() == DatapointValue::T_STRING) {
-                    if (stoi(coValue->getData().toStringValue()) > 0) {
+                if (coValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    if ((coValue->getData().toInt()) > 0) {
                         spsValue = true;
                     }
                 }
@@ -796,8 +791,8 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
 
             if (coValue) {
 
-                if (coValue->getData().getType() == DatapointValue::T_STRING) {
-                    int dpsValue = stoi(coValue->getData().toStringValue());
+                if (coValue->getData().getType() == DatapointValue::T_INTEGER) {
+                    int dpsValue = coValue->getData().toInt();
 
                     if (dpsValue == 0) {
                         pivot.setCtlValStr("intermediate-state");
@@ -828,7 +823,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             if(hasCoTest)pivot.setTest(coTest);
 
             if (coValue) {
-                pivot.setCtlValI(stoi(coValue->getData().toStringValue()));
+                pivot.setCtlValI(coValue->getData().toInt());
             }
 
             appendTimestampOperationObject(pivot, hasCoTs, coTs);
@@ -845,7 +840,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             if(hasCoTest)pivot.setTest(coTest);
 
             if (coValue) {
-                pivot.setCtlValF(stof(coValue->getData().toStringValue()));
+                pivot.setCtlValF(coValue->getData().toDouble());
             }
 
             appendTimestampOperationObject(pivot, hasCoTs, coTs);
@@ -862,7 +857,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             if(hasCoTest)pivot.setTest(coTest);
 
             if (coValue) {
-                int ctlValue = stoi(coValue->getData().toStringValue());
+                int ctlValue = coValue->getData().toInt();
 
                     switch(ctlValue){
                         case 0:

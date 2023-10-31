@@ -1153,26 +1153,25 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
     std::vector<Datapoint*> commandObject;
 
     string asduType = exchangeConfig->getTypeId();
-
-    Datapoint* type = createDpWithValue("co_type",(std::string) asduType);
+    Datapoint* type = createDpWithValue("co_type",asduType);
     commandObject.push_back(type);
 
-    Datapoint* ca = createDpWithValue("co_ca",(std::string)to_string(exchangeConfig->getCA()));
+    Datapoint* ca = createDpWithValue("co_ca",(long)exchangeConfig->getCA());
     commandObject.push_back(ca);
 
-    Datapoint* ioa = createDpWithValue("co_ioa",(std::string)to_string(exchangeConfig->getIOA()));
+    Datapoint* ioa = createDpWithValue("co_ioa",(long)exchangeConfig->getIOA());
     commandObject.push_back(ioa);
 
-    Datapoint* cot = createDpWithValue("co_cot",(std::string)to_string(getCause()));
+    Datapoint* cot = createDpWithValue("co_cot",(long)getCause());
     commandObject.push_back(cot);
 
-    Datapoint* negative = createDpWithValue("co_negative",(std::string)(to_string(isConfirmation())));
+    Datapoint* negative = createDpWithValue("co_negative",(long) isConfirmation());
     commandObject.push_back(negative);
 
-    Datapoint* se = createDpWithValue("co_se",(std::string)(to_string(getSelect())));
+    Datapoint* se = createDpWithValue("co_se",(long)getSelect());
     commandObject.push_back(se);
 
-    Datapoint* test = createDpWithValue("co_test",(std::string)(to_string(Test())));
+    Datapoint* test = createDpWithValue("co_test", (long)Test());
     commandObject.push_back(test);
 
     long time = 0;
@@ -1183,15 +1182,15 @@ PivotOperationObject::toIec104OperationObject(IEC104PivotDataPoint* exchangeConf
 
     bool hasTime = asduType.find('T') != std::string::npos && time!= 0;
 
-    Datapoint* ts = createDpWithValue("co_ts",(std::string) (hasTime ? to_string(time) : ""));
+    Datapoint* ts = createDpWithValue("co_ts",(long) (hasTime ? time : 0));
     commandObject.push_back(ts);
 
     Datapoint* value = nullptr;
 
     if(hasIntVal)
-        value = createDpWithValue("co_value",(std::string) to_string(intVal));
+        value = createDpWithValue("co_value",(long) intVal);
     else
-        value = createDpWithValue("co_value",(std::string) to_string((double)floatVal));
+        value = createDpWithValue("co_value", (double)floatVal);
 
     commandObject.push_back(value);
 
