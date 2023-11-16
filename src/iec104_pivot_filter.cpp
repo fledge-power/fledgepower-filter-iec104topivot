@@ -281,7 +281,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             bool spsValue = false;
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 int value = static_cast<int>(dataObject.doValue->getData().toInt());
@@ -317,7 +317,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
 
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 int dpsValue = static_cast<int>(dataObject.doValue->getData().toInt());
@@ -363,7 +363,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 long value = dataObject.doValue->getData().toInt();
                 checkValueRange(beforeLog, value, -1L, 1L, "ME normalized");
@@ -415,7 +415,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 long value = dataObject.doValue->getData().toInt();
                 checkValueRange(beforeLog, value, -32768L, 32767L, "ME scaled");
@@ -453,8 +453,8 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
-            if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
+            if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER ) {
                 long value = dataObject.doValue->getData().toInt();
                 float iValue = static_cast<int>(value);
                 if (static_cast<long>(iValue) != value) {
@@ -497,7 +497,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setIdentifier(exchangeConfig->getPivotId());
         pivot.setCause(dataObject.doCot);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             if (dataObject.doValue->getData().getType() == DatapointValue::T_STRING) {
                 int wtrVal;
                 int transInd;
@@ -546,7 +546,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         pivot.setCause(dataObject.doCot);
         if(attributeFound["do_test"])pivot.setTest(dataObject.doTest);
         if(attributeFound["do_negative"]) pivot.setConfirmation(dataObject.doNegative);
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             bool spsValue = false;
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 int value = static_cast<int>(dataObject.doValue->getData().toInt());
@@ -570,7 +570,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         if(attributeFound["do_test"])pivot.setTest(dataObject.doTest);
         if(attributeFound["do_negative"]) pivot.setConfirmation(dataObject.doNegative);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
 
             if (dataObject.doValue->getData().getType() == DatapointValue::T_INTEGER) {
                 int dpsValue = static_cast<int>(dataObject.doValue->getData().toInt());
@@ -605,7 +605,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         if(attributeFound["do_test"])pivot.setTest(dataObject.doTest);
         if(attributeFound["do_negative"]) pivot.setConfirmation(dataObject.doNegative);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             double value = dataObject.doValue->getData().toDouble();
             float fValue = static_cast<float>(value);
             if (dataObject.doType == "C_SE_NA_1" || dataObject.doType == "C_SE_TA_1") {
@@ -632,7 +632,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         if(attributeFound["do_test"])pivot.setTest(dataObject.doTest);
         if(attributeFound["do_negative"]) pivot.setConfirmation(dataObject.doNegative);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             long value = dataObject.doValue->getData().toInt();
             checkValueRange(beforeLog, value, -64L, 63L, "SE scaled");
             pivot.setCtlValI(static_cast<int>(value));
@@ -651,7 +651,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         if(attributeFound["do_test"])pivot.setTest(dataObject.doTest);
         if(attributeFound["do_negative"]) pivot.setConfirmation(dataObject.doNegative);
 
-        if (attributeFound["do_value"]) {
+        if (attributeFound["do_value"] && dataObject.doValue != nullptr) {
             int ctlValue = dataObject.doValue->getData().toInt();
             checkValueRange(beforeLog, ctlValue, 0, 3, "RC");
             switch(ctlValue){
@@ -781,7 +781,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         if(attributeFound["co_se"])pivot.setSelect(commandObject.coSe);
         if(attributeFound["co_test"])pivot.setTest(commandObject.coTest);
 
-        if (attributeFound["co_value"]) {
+        if (attributeFound["co_value"] && commandObject.coValue != nullptr) {
             bool spsValue = false;
             if (commandObject.coValue->getData().getType() == DatapointValue::T_INTEGER) {
                 bool value = commandObject.coValue->getData().toInt();
@@ -805,7 +805,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         if(attributeFound["co_se"])pivot.setSelect(commandObject.coSe);
         if(attributeFound["co_test"])pivot.setTest(commandObject.coTest);
 
-        if (attributeFound["co_value"]) {
+        if (attributeFound["co_value"] && commandObject.coValue != nullptr) {
 
             if (commandObject.coValue->getData().getType() == DatapointValue::T_INTEGER) {
                 int dpsValue = commandObject.coValue->getData().toInt();
@@ -840,7 +840,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         if(attributeFound["co_se"])pivot.setSelect(commandObject.coSe);
         if(attributeFound["co_test"])pivot.setTest(commandObject.coTest);
 
-        if (attributeFound["co_value"]) {
+        if (attributeFound["co_value"]  && commandObject.coValue != nullptr) {
             int value = commandObject.coValue->getData().toInt();
             checkValueRange(beforeLog, value, -32768, 32767, "SE scaled");
             pivot.setCtlValI(value);
@@ -859,7 +859,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         if(attributeFound["co_se"])pivot.setSelect(commandObject.coSe);
         if(attributeFound["co_test"])pivot.setTest(commandObject.coTest);
 
-        if (attributeFound["co_value"]) {
+        if (attributeFound["co_value"]  && commandObject.coValue != nullptr) {
             double value = commandObject.coValue->getData().toDouble();
             float fValue = static_cast<float>(value);
             if (commandObject.coType == "C_SE_NA_1" || commandObject.coType == "C_SE_TA_1") {
@@ -886,7 +886,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
         if(attributeFound["co_se"])pivot.setSelect(commandObject.coSe);
         if(attributeFound["co_test"])pivot.setTest(commandObject.coTest);
 
-        if (attributeFound["co_value"]) {
+        if (attributeFound["co_value"]  && commandObject.coValue != nullptr) {
             int ctlValue = commandObject.coValue->getData().toInt();
             checkValueRange(beforeLog, ctlValue, 0, 3, "RC");
             switch(ctlValue){

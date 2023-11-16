@@ -556,7 +556,11 @@ PivotDataObject::PivotDataObject(Datapoint* pivotData)
 
     m_identifier = getChildValueStr(m_ln, "Identifier");
 
-    m_comingFrom = getChildValueStr(m_ln, "ComingFrom");
+    Datapoint* comingFromDp = getChild(m_ln,"ComingFrom");
+
+    if(comingFromDp){
+        m_comingFrom = getChildValueStr(m_ln, "ComingFrom");
+    }
 
     Datapoint* cause = getChild(m_ln, "Cause");
 
