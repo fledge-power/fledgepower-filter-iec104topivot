@@ -13,7 +13,6 @@
 #define PIVOT_IEC104_CONFIG_H
 
 #include <map>
-#include <vector>
 #include <memory>
 
 using namespace std;
@@ -45,10 +44,6 @@ private:
 class IEC104PivotConfig
 {
 public:
-    IEC104PivotConfig();
-    IEC104PivotConfig(const string& exchangeConfig);
-    ~IEC104PivotConfig();
-
     void importExchangeConfig(const string& exchangeConfig);
 
     IEC104PivotDataPoint* getExchangeDefinitionsByLabel(std::string label);
@@ -56,10 +51,16 @@ public:
     IEC104PivotDataPoint* getExchangeDefinitionsByPivotId(std::string pivotid);
 
 private:
+    
+    void m_deleteExchangeDefinitions();
 
-    void deleteExchangeDefinitions();
+    static bool m_check_string(const rapidjson::Value &json, const char *key);
+    static bool m_check_array(const rapidjson::Value &json, const char *key);
+    static bool m_check_object(const rapidjson::Value &json, const char *key);
 
-    bool m_exchangeConfigComplete;
+    static bool m_retrieve(const rapidjson::Value &json, const char *key, std::string *target);
+
+    bool m_exchangeConfigComplete = false;
 
     std::map<std::string, std::shared_ptr<IEC104PivotDataPoint>> m_exchangeDefinitionsLabel;
     std::map<std::string, std::shared_ptr<IEC104PivotDataPoint>> m_exchangeDefinitionsAddress;
