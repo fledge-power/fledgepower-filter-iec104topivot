@@ -32,6 +32,12 @@ static const char *default_config = QUOTE({
 				"default" : PLUGIN_NAME,
 				"readonly" : "true"
 			},
+            "enable": {
+                "description": "A switch that can be used to enable or disable execution of the filter.",
+                "displayName": "Enabled",
+                "type": "boolean",
+                "default": "true"
+            },
             "exchanged_data": {
                     "description" : "exchanged data list",
                     "type" : "JSON",
@@ -126,8 +132,8 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
                           OUTPUT_HANDLE *outHandle,
                           OUTPUT_STREAM output)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - plugin_init -";
-    Iec104PivotUtility::log_info("%s Initializing the plugin", beforeLog.c_str());
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - plugin_init -"; //LCOV_EXCL_LINE
+    Iec104PivotUtility::log_info("%s Initializing the plugin", beforeLog.c_str()); //LCOV_EXCL_LINE
 
     IEC104PivotFilter* pivotFilter = new IEC104PivotFilter(PLUGIN_NAME,
                                 config, outHandle, output);
