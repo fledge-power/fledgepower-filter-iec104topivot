@@ -588,8 +588,61 @@ getDatapoints(Reading* reading)
     std::vector<Datapoint*>& datapoints = reading->getReadingData();
     return datapoints;
 }
+static Datapoint*
+createDp(const string& name)
+{
+    vector<Datapoint*>* datapoints = new vector<Datapoint*>;
 
+    DatapointValue dpv(datapoints, true);
 
+    Datapoint* dp = new Datapoint(name, dpv);
+
+    return dp;
+}
+
+template <class T>
+static Datapoint*
+createDpWithValue(const string& name, const T value)
+{
+    DatapointValue dpv(value);
+
+    Datapoint* dp = new Datapoint(name, dpv);
+
+    return dp;
+}
+
+static Datapoint*
+addElement(Datapoint* dp, const string& name)
+{
+    DatapointValue& dpv = dp->getData();
+
+    std::vector<Datapoint*>* subDatapoints = dpv.getDpVec();
+
+    Datapoint* element = createDp(name);
+
+    if (element) {
+       subDatapoints->push_back(element);
+    }
+
+    return element;
+}
+
+template <class T>
+static Datapoint*
+addElementWithValue(Datapoint* dp, const string& name, const T value)
+{
+    DatapointValue& dpv = dp->getData();
+
+    std::vector<Datapoint*>* subDatapoints = dpv.getDpVec();
+
+    Datapoint* element = createDpWithValue(name, value);
+
+    if (element) {
+       subDatapoints->push_back(element);
+    }
+
+    return element;
+}
 static Datapoint*
 getChild(Datapoint* dp, const string& name)
 {
@@ -1510,6 +1563,230 @@ TEST(PivotIEC104Plugin, M_ME_NC_1_QualityOverflow)
     plugin_shutdown(handle);
 }
 
+/// @brief Test requirement that invalid flag is mapped to validity="invalid"
+TEST(PivotIEC104Plugin, M_ME_NC_1_QualityInvalid)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject(1,"M_ME_NC_1", 45, 986, 1, (float)100.5f, true, false, false, false, false, 0, false, false, false));
+
+    Reading* reading = new Reading(std::string("TM3"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIM");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* mvTyp = getChild(gtis, "MvTyp");
+    ASSERT_NE(nullptr, mvTyp);
+    Datapoint* mag = getChild(mvTyp, "mag");
+    ASSERT_NE(nullptr, mag);
+    Datapoint* magF = getChild(mag, "f");
+    ASSERT_NE(nullptr, magF);
+
+    ASSERT_TRUE(isValueFloat(magF));
+    ASSERT_EQ(100.5f, getValueFloat(magF));
+
+    Datapoint* q = getChild(mvTyp, "q");
+    ASSERT_NE(nullptr, q);
+
+    Datapoint* qValidiy = getChild(q, "Validity");
+    ASSERT_NE(nullptr, qValidiy);
+    ASSERT_TRUE(isValueStr(qValidiy));
+    ASSERT_EQ("invalid", getValueStr(qValidiy));
+
+    Datapoint* qDetailQuality = getChild(q, "DetailQuality");
+    ASSERT_EQ(nullptr, qDetailQuality);
+
+    Datapoint* comingFrom = getChild(gtis, "ComingFrom");
+    ASSERT_NE(nullptr, comingFrom);
+    ASSERT_TRUE(isValueStr(comingFrom));
+    ASSERT_EQ("iec104", getValueStr(comingFrom));
+
+    Datapoint* cause = getChild(gtis, "Cause");
+    ASSERT_NE(nullptr, cause);
+    Datapoint* causeStVal = getChild(cause, "stVal");
+    ASSERT_NE(nullptr, causeStVal);
+    ASSERT_TRUE(isValueInt(causeStVal));
+    ASSERT_EQ(1, getValueInt(causeStVal));
+
+    plugin_shutdown(handle);
+}
+
+/// @brief Test requirement that inaccurate flag is mapped to do_quality_iv = true
+TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_NA_1_DetailQualityInaccurate)
+{
+    outputHandlerCalled = 0;
+
+    PivotDataObject* pivotObject = new PivotDataObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, pivotObject);
+
+    pivotObject->setIdentifier("ID-45-672");
+    pivotObject->setCause(3); /* COT = spont */
+    pivotObject->setStVal(true);
+    pivotObject->addQuality(false, false, false, false, false, false); // add element: <Root>.<type>.q
+
+    Datapoint* pivotObjectDp = pivotObject->toDatapoint();
+    delete pivotObject;
+    // Modify PIVOT datapoint to add <Root>.<type>.q.Validity = "questionable" and q.DetailQuality.inaccurate = true
+    Datapoint* gtis = getChild(pivotObjectDp, "GTIS");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* spsTyp = getChild(gtis, "SpsTyp");
+    ASSERT_NE(nullptr, spsTyp);
+    Datapoint* q = getChild(spsTyp, "q");
+    ASSERT_NE(nullptr, q);
+    addElementWithValue(q, "Validity", "questionable");
+    Datapoint* detailQuality = addElement(q, "DetailQuality");
+    addElementWithValue(detailQuality, "inaccurate", (long)1);
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(pivotObjectDp);
+
+    Reading* reading = new Reading(std::string("TS1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_SP_NA_1", getValueStr(doType));
+
+    Datapoint* doQualityIv= getChild(dataobject, "do_quality_iv");
+    ASSERT_NE(nullptr, doQualityIv);
+    ASSERT_TRUE(isValueInt(doQualityIv));
+    ASSERT_EQ(1, getValueInt(doQualityIv));
+
+    plugin_shutdown(handle);
+}
+
+/// @brief Test requirement that inconsistent flag is mapped to do_quality_iv = true
+TEST(PivotIEC104Plugin, SpsTyp_to_M_SP_NA_1_DetailQualityInconsistent)
+{
+    outputHandlerCalled = 0;
+
+    PivotDataObject* pivotObject = new PivotDataObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, pivotObject);
+
+    pivotObject->setIdentifier("ID-45-672");
+    pivotObject->setCause(3); /* COT = spont */
+    pivotObject->setStVal(true);
+    pivotObject->addQuality(false, false, false, false, false, false); // add element: <Root>.<type>.q
+
+    Datapoint* pivotObjectDp = pivotObject->toDatapoint();
+    delete pivotObject;
+    // Modify PIVOT datapoint to add <Root>.<type>.q.Validity = "questionable" and q.DetailQuality.inaccurate = true
+    Datapoint* gtis = getChild(pivotObjectDp, "GTIS");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* spsTyp = getChild(gtis, "SpsTyp");
+    ASSERT_NE(nullptr, spsTyp);
+    Datapoint* q = getChild(spsTyp, "q");
+    ASSERT_NE(nullptr, q);
+    addElementWithValue(q, "Validity", "questionable");
+    Datapoint* detailQuality = addElement(q, "DetailQuality");
+    addElementWithValue(detailQuality, "inconsistent", (long)1);
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(pivotObjectDp);
+
+    Reading* reading = new Reading(std::string("TS1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_SP_NA_1", getValueStr(doType));
+
+    Datapoint* doQualityIv= getChild(dataobject, "do_quality_iv");
+    ASSERT_NE(nullptr, doQualityIv);
+    ASSERT_TRUE(isValueInt(doQualityIv));
+    ASSERT_EQ(1, getValueInt(doQualityIv));
+
+    plugin_shutdown(handle);
+}
 
 TEST(PivotIEC104Plugin, TypeNotMatching)
 {

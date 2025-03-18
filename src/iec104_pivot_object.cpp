@@ -418,11 +418,11 @@ PivotDataObject::handleDetailQuality(Datapoint* detailQuality)
                 else
                     m_inconsistent = false;
             }
-            else if (child->getName() == "inacurate") {
+            else if (child->getName() == "inaccurate") {
                 if (getValueInt(child) > 0)
-                    m_inacurate = true;
+                    m_inaccurate = true;
                 else
-                    m_inacurate = false;
+                    m_inaccurate = false;
             }
             else if (child->getName() == "oldData") {
                 if (getValueInt(child) > 0)
@@ -1109,7 +1109,13 @@ PivotDataObject::toIec104DataObject(IEC104PivotDataPoint* exchangeConfig)
 
         addElementWithValue(dataObject, "do_test", (long)(Test() ? 1 : 0));
 
-        addElementWithValue(dataObject, "do_quality_iv", (long)(getValidity() == Validity::INVALID ? 1 : 0));
+        if (getValidity() == Validity::INVALID) {
+            addElementWithValue(dataObject, "do_quality_iv", (long)1);
+        } else if (getValidity() == Validity::QUESTIONABLE && (Inconsistent() || Inaccurate())) {
+            addElementWithValue(dataObject, "do_quality_iv", (long)1);
+        } else {
+            addElementWithValue(dataObject, "do_quality_iv", (long)0);
+        }
 
         addElementWithValue(dataObject, "do_quality_bl", (long)(OperatorBlocked() ? 1 : 0));
 
