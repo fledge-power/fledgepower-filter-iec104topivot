@@ -172,6 +172,7 @@ public:
     bool BadReference() {return m_badReference;};
     bool Failure() {return m_failure;};
     bool Inconsistent() {return m_inconsistent;};
+    bool Inaccurate() {return m_inaccurate;};
     bool OldData() {return m_oldData;};
     bool Oscillatory() {return m_oscillatory;};
     bool OutOfRange() {return m_outOfRange;};
@@ -191,7 +192,7 @@ private:
     bool m_badReference = false;
     bool m_failure = false;
     bool m_inconsistent = false;
-    bool m_inacurate = false;
+    bool m_inaccurate = false;
     bool m_oldData = false;
     bool m_oscillatory = false;
     bool m_outOfRange = false;
