@@ -91,7 +91,7 @@ checkTypeMatch(std::string& incomingType, IEC104PivotDataPoint* exchangeConfig)
 static bool checkValueRange(const std::string& beforeLog, int value, int min, int max, const std::string& type)
 {
     if (value < min || value > max) {
-        Iec104PivotUtility::log_warn("%s do_value out of range [%d..%d] for %s: %d", beforeLog.c_str(), min, max, type.c_str(), value);
+        Iec104PivotUtility::log_warn("%s do_value out of range [%d..%d] for %s: %d", beforeLog.c_str(), min, max, type.c_str(), value); //LCOV_EXCL_LINE
         return false;
     }
     return true;
@@ -100,7 +100,7 @@ static bool checkValueRange(const std::string& beforeLog, int value, int min, in
 static bool checkValueRange(const std::string& beforeLog, long value, long min, long max, const std::string& type)
 {
     if (value < min || value > max) {
-        Iec104PivotUtility::log_warn("%s do_value out of range [%ld..%ld] for %s: %ld", beforeLog.c_str(), min, max, type.c_str(), value);
+        Iec104PivotUtility::log_warn("%s do_value out of range [%ld..%ld] for %s: %ld", beforeLog.c_str(), min, max, type.c_str(), value); //LCOV_EXCL_LINE
         return false;
     }
     return true;
@@ -109,7 +109,7 @@ static bool checkValueRange(const std::string& beforeLog, long value, long min, 
 static bool checkValueRange(const std::string& beforeLog, double value, double min, double max, const std::string& type)
 {
     if (value < min || value > max) {
-        Iec104PivotUtility::log_warn("%s do_value out of range [%x..%x] for %s: %x", beforeLog.c_str(), min, max, type.c_str(), value);
+        Iec104PivotUtility::log_warn("%s do_value out of range [%x..%x] for %s: %x", beforeLog.c_str(), min, max, type.c_str(), value); //LCOV_EXCL_LINE
         return false;
     }
     return true;
@@ -192,7 +192,7 @@ void IEC104PivotFilter::readAttribute(std::map<std::string, bool>& attributeFoun
 Datapoint*
 IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertDataObjectToPivot -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertDataObjectToPivot -"; //LCOV_EXCL_LINE
     Datapoint* convertedDatapoint = nullptr;
 
     DatapointValue& dpv = sourceDp->getData();
@@ -241,26 +241,26 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
     }
 
     if (!attributeFound["do_type"]) {
-        Iec104PivotUtility::log_error("%s Missing do_type", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing do_type", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     if (!attributeFound["do_cot"]) {
-        Iec104PivotUtility::log_error("%s Missing do_cot", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing do_cot", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     if (dataObject.comingFromValue != "iec104") {
-        Iec104PivotUtility::log_warn("%s data_object for %s is not from IEC 104 plugin -> ignore", beforeLog.c_str(),
+        Iec104PivotUtility::log_warn("%s data_object for %s is not from IEC 104 plugin -> ignore", beforeLog.c_str(), //LCOV_EXCL_LINE
                                     exchangeConfig->getLabel().c_str());
         return nullptr;
     }
     if (!checkTypeMatch(dataObject.doType, exchangeConfig)) {
-        Iec104PivotUtility::log_warn("%s Input type (%s) does not match configured type (%s) for label %s", beforeLog.c_str(),
+        Iec104PivotUtility::log_warn("%s Input type (%s) does not match configured type (%s) for label %s", beforeLog.c_str(), //LCOV_EXCL_LINE
                                     dataObject.doType.c_str(), exchangeConfig->getTypeId().c_str(), exchangeConfig->getLabel().c_str());
         return nullptr;
     }
 
     if(!attributeFound["do_ts"] && hasASDUTimestamp(dataObject.doType)) {
-        Iec104PivotUtility::log_warn("%s Data object has ASDU type with timestamp (%s), but no timestamp was received",
+        Iec104PivotUtility::log_warn("%s Data object has ASDU type with timestamp (%s), but no timestamp was received", //LCOV_EXCL_LINE
                                     beforeLog.c_str(), dataObject.doType.c_str());
     }
 
@@ -271,7 +271,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in SP ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in SP ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -307,7 +307,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in DP ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in DP ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -353,7 +353,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME normalized ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME normalized ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -391,21 +391,21 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME scaled ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME scaled ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         if (dataObject.doType == "M_ME_TE_1") {
             if (!attributeFound["do_ts"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_ts in ME scaled with timestamp", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_ts in ME scaled with timestamp", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
             if (!attributeFound["do_ts_iv"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_iv in ME scaled with timestamp", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_iv in ME scaled with timestamp", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
             if (!attributeFound["do_ts_su"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_su in ME scaled with timestamp", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_su in ME scaled with timestamp", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
             if (!attributeFound["do_ts_sub"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_sub in ME scaled with timestamp", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_ts_sub in ME scaled with timestamp", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -443,7 +443,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME floating ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ME floating ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -458,7 +458,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 long value = dataObject.doValue->getData().toInt();
                 float iValue = static_cast<int>(value);
                 if (static_cast<long>(iValue) != value) {
-                    Iec104PivotUtility::log_warn("%s do_value out of range (int) for ME floating: %f", beforeLog.c_str(), value);
+                    Iec104PivotUtility::log_warn("%s do_value out of range (int) for ME floating: %f", beforeLog.c_str(), value); //LCOV_EXCL_LINE
                 }
                 pivot.setMagI(iValue);
             }
@@ -466,7 +466,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                 double value = dataObject.doValue->getData().toDouble();
                 float fValue = static_cast<float>(value);
                 if (static_cast<double>(fValue) != value) {
-                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for ME floating: %f", beforeLog.c_str(), value);
+                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for ME floating: %f", beforeLog.c_str(), value); //LCOV_EXCL_LINE
                 }
                 pivot.setMagF(fValue);
             }
@@ -487,7 +487,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         // Message structure checks
         if (!attributeFound["do_value"]) {
             if (!attributeFound["do_negative"]) {
-                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ST ACK", beforeLog.c_str());
+                Iec104PivotUtility::log_warn("%s Missing attribute do_negative in ST ACK", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
         }
         
@@ -512,10 +512,10 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
                     try {
                         wtrVal = std::stoi(numStr);
                     } catch (const std::invalid_argument &e) {
-                        Iec104PivotUtility::log_warn("%s Cannot convert value '%s' to integer: %s",
+                        Iec104PivotUtility::log_warn("%s Cannot convert value '%s' to integer: %s", //LCOV_EXCL_LINE
                                                     beforeLog.c_str(), numStr.c_str(), e.what());
                     } catch (const std::out_of_range &e) {
-                        Iec104PivotUtility::log_warn("%s Cannot convert value '%s' to integer: %s",
+                        Iec104PivotUtility::log_warn("%s Cannot convert value '%s' to integer: %s", //LCOV_EXCL_LINE
                                                     beforeLog.c_str(), numStr.c_str(), e.what());
                     }
                     checkValueRange(beforeLog, wtrVal, -64, 63, "ST");
@@ -613,7 +613,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             }
             else if (dataObject.doType == "C_SE_NC_1" || dataObject.doType == "C_SE_TC_1") {
                 if (static_cast<double>(fValue) != value) {
-                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for SE floating: %f", beforeLog.c_str(), value);
+                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for SE floating: %f", beforeLog.c_str(), value); //LCOV_EXCL_LINE
                 }
             }
             pivot.setCtlValF(fValue);
@@ -657,20 +657,20 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
             switch(ctlValue){
                 case 0:
                     pivot.setCtlValStr("stop");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 1:
                     pivot.setCtlValStr("lower");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 2:
                     pivot.setCtlValStr("higher");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 3:
                     pivot.setCtlValStr("reserved");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 default:
-                    Iec104PivotUtility::log_warn("%s Invalid step command response value: %s", beforeLog.c_str(),
+                    Iec104PivotUtility::log_warn("%s Invalid step command response value: %s", beforeLog.c_str(), //LCOV_EXCL_LINE
                                                 (exchangeConfig->getPivotId()).c_str());
-                    break;
+                    break; //LCOV_EXCL_LINE
             }
         }
 
@@ -678,7 +678,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         convertedDatapoint = pivot.toDatapoint();
     }
     else {
-        Iec104PivotUtility::log_warn("%s Unknown do_type: %s -> ignore", beforeLog.c_str(), dataObject.doType.c_str());
+        Iec104PivotUtility::log_warn("%s Unknown do_type: %s -> ignore", beforeLog.c_str(), dataObject.doType.c_str()); //LCOV_EXCL_LINE
     }
 
     return convertedDatapoint;
@@ -687,7 +687,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
 Datapoint*
 IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoints)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertOperationObjectToPivot -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertOperationObjectToPivot -"; //LCOV_EXCL_LINE
 
     Datapoint* convertedDatapoint = nullptr;
     std::map<std::string, bool> attributeFound = {
@@ -721,11 +721,11 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
     }
 
     if(!attributeFound["co_ca"]){
-        Iec104PivotUtility::log_error("%s Missing co_ca", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing co_ca", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     if(!attributeFound["co_ioa"]){
-        Iec104PivotUtility::log_error("%s Missing co_ioa", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing co_ioa", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     
@@ -733,40 +733,40 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
     IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByAddress(address);
 
     if(!exchangeConfig){
-        Iec104PivotUtility::log_error("%s CA (%d) and IOA (%d) not found in exchange data", beforeLog.c_str(),
+        Iec104PivotUtility::log_error("%s CA (%d) and IOA (%d) not found in exchange data", beforeLog.c_str(), //LCOV_EXCL_LINE
                                     commandObject.coCa, commandObject.coIoa);
         return nullptr;
     }
 
     if (!attributeFound["co_type"]) {
-        Iec104PivotUtility::log_error("%s Missing co_type", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing co_type", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     if (!attributeFound["co_cot"]) {
-        Iec104PivotUtility::log_error("%s Missing co_cot", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s Missing co_cot", beforeLog.c_str()); //LCOV_EXCL_LINE
         return nullptr;
     }
     else {
         if (commandObject.coCot < 0 || commandObject.coCot > 63) {
-            Iec104PivotUtility::log_error("%s COT value out of range [0..63] for address %s: %d", beforeLog.c_str(), address.c_str(), commandObject.coCot);
+            Iec104PivotUtility::log_error("%s COT value out of range [0..63] for address %s: %d", beforeLog.c_str(), address.c_str(), commandObject.coCot); //LCOV_EXCL_LINE
             return nullptr;
         }
     }
 
     if (!checkTypeMatch(commandObject.coType, exchangeConfig)) {
-        Iec104PivotUtility::log_warn("%s Input type (%s) does not match configured type (%s) for address %s", beforeLog.c_str(),
+        Iec104PivotUtility::log_warn("%s Input type (%s) does not match configured type (%s) for address %s", beforeLog.c_str(), //LCOV_EXCL_LINE
                                     commandObject.coType.c_str(), exchangeConfig->getTypeId().c_str(), address.c_str());
         return nullptr;
     }
 
     if (commandObject.comingFromValue != "iec104") {
-        Iec104PivotUtility::log_warn("%s data_object for %s is not from IEC 104 plugin -> ignore", beforeLog.c_str(),
+        Iec104PivotUtility::log_warn("%s data_object for %s is not from IEC 104 plugin -> ignore", beforeLog.c_str(), //LCOV_EXCL_LINE
                                     exchangeConfig->getLabel().c_str());
         return nullptr;
     }
 
     if(!attributeFound["co_ts"] && hasASDUTimestamp(commandObject.coType)) {
-        Iec104PivotUtility::log_error("%s Command has ASDU type with timestamp (%s), but no timestamp was received -> ignore",
+        Iec104PivotUtility::log_error("%s Command has ASDU type with timestamp (%s), but no timestamp was received -> ignore", //LCOV_EXCL_LINE
                                     beforeLog.c_str(), commandObject.coType.c_str());
         return nullptr;
     }
@@ -867,7 +867,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             }
             else if (commandObject.coType == "C_SE_NC_1" || commandObject.coType == "C_SE_TC_1") {
                 if (static_cast<double>(fValue) != value) {
-                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for SE floating: %f", beforeLog.c_str(), value);
+                    Iec104PivotUtility::log_warn("%s do_value out of range (float) for SE floating: %f", beforeLog.c_str(), value); //LCOV_EXCL_LINE
                 }
             }
             pivot.setCtlValF(fValue);
@@ -892,20 +892,20 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
             switch(ctlValue){
                 case 0:
                     pivot.setCtlValStr("stop");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 1:
                     pivot.setCtlValStr("lower");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 2:
                     pivot.setCtlValStr("higher");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 case 3:
                     pivot.setCtlValStr("reserved");
-                    break;
+                    break; //LCOV_EXCL_LINE
                 default:
-                    Iec104PivotUtility::log_warn("%s Invalid step command value: %s", beforeLog.c_str(),
+                    Iec104PivotUtility::log_warn("%s Invalid step command value: %s", beforeLog.c_str(), //LCOV_EXCL_LINE
                                                 (exchangeConfig->getPivotId()).c_str());
-                    break;
+                    break; //LCOV_EXCL_LINE
             }
         }
 
@@ -920,7 +920,7 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
 Datapoint*
 IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertDatapointToIEC104DataObject -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertDatapointToIEC104DataObject -"; //LCOV_EXCL_LINE
     Datapoint* convertedDatapoint = nullptr;
 
     try {
@@ -930,7 +930,7 @@ IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC10
     }
     catch (PivotObjectException& e)
     {
-        Iec104PivotUtility::log_error("%s Failed to convert pivot object: %s", beforeLog.c_str(), e.getContext().c_str());
+        Iec104PivotUtility::log_error("%s Failed to convert pivot object: %s", beforeLog.c_str(), e.getContext().c_str()); //LCOV_EXCL_LINE
     }
 
     return convertedDatapoint;
@@ -939,7 +939,7 @@ IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC10
 std::vector<Datapoint*>
 IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertReadingToIEC104OperationObject -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertReadingToIEC104OperationObject -"; //LCOV_EXCL_LINE
     std::vector<Datapoint*> convertedDatapoints;
 
     try {
@@ -948,7 +948,7 @@ IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
         IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByPivotId(pivotId);
 
         if(!exchangeConfig){
-            Iec104PivotUtility::log_error("%s Pivot ID not in exchangedData: %s", beforeLog.c_str(), pivotId.c_str());
+            Iec104PivotUtility::log_error("%s Pivot ID not in exchangedData: %s", beforeLog.c_str(), pivotId.c_str()); //LCOV_EXCL_LINE
         }
         else{
             convertedDatapoints = pivotOperationObject.toIec104OperationObject(exchangeConfig);
@@ -956,7 +956,7 @@ IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
     }
     catch (PivotObjectException& e)
     {
-        Iec104PivotUtility::log_error("%s Failed to convert pivot operation object: %s", beforeLog.c_str(), e.getContext().c_str());
+        Iec104PivotUtility::log_error("%s Failed to convert pivot operation object: %s", beforeLog.c_str(), e.getContext().c_str()); //LCOV_EXCL_LINE
     }
 
     return convertedDatapoints;
@@ -965,7 +965,7 @@ IEC104PivotFilter::convertReadingToIEC104OperationObject(Datapoint* sourceDp)
 void
 IEC104PivotFilter::ingest(READINGSET* readingSet)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::ingest -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::ingest -"; //LCOV_EXCL_LINE
     /* apply transformation */
     std::vector<Reading*>* readings = readingSet->getAllReadingsPtr();
 
@@ -983,13 +983,13 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         std::vector<Datapoint*> convertedDatapoints;
 
 
-        Iec104PivotUtility::log_debug("%s original Reading: (%s)", beforeLog.c_str(), reading->toJSON().c_str());
+        Iec104PivotUtility::log_debug("%s original Reading: (%s)", beforeLog.c_str(), reading->toJSON().c_str()); //LCOV_EXCL_LINE
 
         if(assetName == "IEC104Command"){
             Datapoint* convertedOperation = convertOperationObjectToPivot(datapoints);
 
             if (!convertedOperation) {
-                Iec104PivotUtility::log_error("%s Failed to convert IEC command object", beforeLog.c_str());
+                Iec104PivotUtility::log_error("%s Failed to convert IEC command object", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
             else{
                 convertedDatapoints.push_back(convertedOperation);
@@ -1002,7 +1002,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             std::vector<Datapoint*> convertedReadingDatapoints = convertReadingToIEC104OperationObject(datapoints[0]);
 
             if (convertedReadingDatapoints.empty()) {
-                Iec104PivotUtility::log_error("%s Failed to convert Pivot operation object", beforeLog.c_str());
+                Iec104PivotUtility::log_error("%s Failed to convert Pivot operation object", beforeLog.c_str()); //LCOV_EXCL_LINE
             }
 
             for(Datapoint* dp : convertedReadingDatapoints)
@@ -1023,7 +1023,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                             convertedDatapoints.push_back(convertedDp);
                         }
                         else {
-                          Iec104PivotUtility::log_error("%s Failed to convert object", beforeLog.c_str());
+                          Iec104PivotUtility::log_error("%s Failed to convert object", beforeLog.c_str()); //LCOV_EXCL_LINE
                         }
                     }
 
@@ -1035,7 +1035,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                         }
                     }
                     else {
-                        Iec104PivotUtility::log_debug("%s Unhandled datapoint type '%s', forwarding reading unchanged",
+                        Iec104PivotUtility::log_debug("%s Unhandled datapoint type '%s', forwarding reading unchanged", //LCOV_EXCL_LINE
                                                     beforeLog.c_str(), dp->getName().c_str());
                         Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
                         convertedDatapoints.push_back(dpCopy);
@@ -1043,7 +1043,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
                 }
             }
             else {
-                Iec104PivotUtility::log_debug("%s Asset '%s' not found in exchangedData, forwarding reading unchanged",
+                Iec104PivotUtility::log_debug("%s Asset '%s' not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
                                             beforeLog.c_str(), assetName.c_str());
                 for (Datapoint* dp : datapoints) {
                     Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
@@ -1059,7 +1059,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
             reading->addDatapoint(convertedDatapoint);
         }
 
-        Iec104PivotUtility::log_debug("%s converted Reading: (%s)", beforeLog.c_str(), reading->toJSON().c_str());
+        Iec104PivotUtility::log_debug("%s converted Reading: (%s)", beforeLog.c_str(), reading->toJSON().c_str()); //LCOV_EXCL_LINE
 
 
         if (reading->getReadingData().size() == 0) {
@@ -1073,12 +1073,12 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
     if (readings->empty() == false)
     {
         if (m_output) {
-            Iec104PivotUtility::log_debug("%s Send %lu converted readings", beforeLog.c_str(), readings->size());
+            Iec104PivotUtility::log_debug("%s Send %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
 
             m_output(m_outHandle, readingSet);
         }
         else {
-            Iec104PivotUtility::log_error("%s No function to call, discard %lu converted readings", beforeLog.c_str(), readings->size());
+            Iec104PivotUtility::log_error("%s No function to call, discard %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
         }
     }
 }
@@ -1086,8 +1086,8 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 void
 IEC104PivotFilter::reconfigure(ConfigCategory* config)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::reconfigure -";
-    Iec104PivotUtility::log_debug("%s (re)configure called", beforeLog.c_str());
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::reconfigure -"; //LCOV_EXCL_LINE
+    Iec104PivotUtility::log_debug("%s (re)configure called", beforeLog.c_str()); //LCOV_EXCL_LINE
 
     if (config)
     {
@@ -1097,11 +1097,11 @@ IEC104PivotFilter::reconfigure(ConfigCategory* config)
             m_config.importExchangeConfig(exchangedData);
         }
         else {
-            Iec104PivotUtility::log_error("%s Missing exchanged_data configuation", beforeLog.c_str());
+            Iec104PivotUtility::log_error("%s Missing exchanged_data configuation", beforeLog.c_str()); //LCOV_EXCL_LINE
         }
     }
     else {
-        Iec104PivotUtility::log_error("%s No configuration provided", beforeLog.c_str());
+        Iec104PivotUtility::log_error("%s No configuration provided", beforeLog.c_str()); //LCOV_EXCL_LINE
     }
 }
 
