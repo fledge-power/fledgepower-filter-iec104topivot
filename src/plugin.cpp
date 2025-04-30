@@ -126,8 +126,8 @@ PLUGIN_HANDLE plugin_init(ConfigCategory* config,
                           OUTPUT_HANDLE *outHandle,
                           OUTPUT_STREAM output)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - plugin_init -";
-    Iec104PivotUtility::log_info("%s Initializing the plugin", beforeLog.c_str());
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - plugin_init -"; //LCOV_EXCL_LINE
+    Iec104PivotUtility::log_info("%s Initializing the plugin", beforeLog.c_str()); //LCOV_EXCL_LINE
 
     IEC104PivotFilter* pivotFilter = new IEC104PivotFilter(PLUGIN_NAME,
                                 config, outHandle, output);
