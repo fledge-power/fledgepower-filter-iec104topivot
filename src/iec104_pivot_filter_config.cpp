@@ -83,7 +83,7 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 
     if (document.Parse(const_cast<char*>(exchangeConfig.c_str())).HasParseError()) {
         Iec104PivotUtility::log_fatal("%s Parsing error in exchanged_data json, offset %u: %s", beforeLog.c_str(), //LCOV_EXCL_LINE
-                                    static_cast<unsigned>(document.GetErrorOffset()), GetParseError_En(document.GetParseError()));
+                                    static_cast<unsigned>(document.GetErrorOffset()), GetParseError_En(document.GetParseError())); //LCOV_EXCL_LINE
         return;
     }
 
@@ -145,11 +145,11 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
                         ioa = std::stoi(ioaStr);
                     } catch (const std::invalid_argument &e) {
                         Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s", //LCOV_EXCL_LINE
-                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what()); //LCOV_EXCL_LINE
                         return;
                     } catch (const std::out_of_range &e) {
                         Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s", //LCOV_EXCL_LINE
-                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what()); //LCOV_EXCL_LINE
                         return;
                     }
 
