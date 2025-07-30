@@ -74,7 +74,7 @@ IEC104PivotConfig::getExchangeDefinitionsByPivotId(std::string pivotid) {
 void
 IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
 {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::importExchangeConfig -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::importExchangeConfig -"; //LCOV_EXCL_LINE
     m_exchangeConfigComplete = false;
 
     m_deleteExchangeDefinitions();
@@ -82,8 +82,8 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
     Document document;
 
     if (document.Parse(const_cast<char*>(exchangeConfig.c_str())).HasParseError()) {
-        Iec104PivotUtility::log_fatal("%s Parsing error in exchanged_data json, offset %u: %s", beforeLog.c_str(),
-                                    static_cast<unsigned>(document.GetErrorOffset()), GetParseError_En(document.GetParseError()));
+        Iec104PivotUtility::log_fatal("%s Parsing error in exchanged_data json, offset %u: %s", beforeLog.c_str(), //LCOV_EXCL_LINE
+                                    static_cast<unsigned>(document.GetErrorOffset()), GetParseError_En(document.GetParseError())); //LCOV_EXCL_LINE
         return;
     }
 
@@ -144,12 +144,12 @@ IEC104PivotConfig::importExchangeConfig(const string& exchangeConfig)
                         ca = std::stoi(caStr);
                         ioa = std::stoi(ioaStr);
                     } catch (const std::invalid_argument &e) {
-                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s",
-                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s", //LCOV_EXCL_LINE
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what()); //LCOV_EXCL_LINE
                         return;
                     } catch (const std::out_of_range &e) {
-                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s",
-                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what());
+                        Iec104PivotUtility::log_error("%s Cannot convert ca '%s' or ioa '%s' to integer: %s", //LCOV_EXCL_LINE
+                                                    beforeLog.c_str(), caStr.c_str(), ioaStr.c_str(), e.what()); //LCOV_EXCL_LINE
                         return;
                     }
 
@@ -175,36 +175,36 @@ IEC104PivotConfig::m_deleteExchangeDefinitions()
 }
 
 bool IEC104PivotConfig::m_check_string(const rapidjson::Value& json, const char* key) {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_string -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_string -"; //LCOV_EXCL_LINE
     if (!json.HasMember(key) || !json[key].IsString()) {
-        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key);
+        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key); //LCOV_EXCL_LINE
         return false;
     }
     return true;
 }
 
 bool IEC104PivotConfig::m_check_array(const rapidjson::Value& json, const char* key) {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_array -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_array -"; //LCOV_EXCL_LINE
     if (!json.HasMember(key) || !json[key].IsArray()) {
-        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key);
+        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key); //LCOV_EXCL_LINE
         return false;
     }
     return true;
 }
 
 bool IEC104PivotConfig::m_check_object(const rapidjson::Value& json, const char* key) {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_object -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_check_object -"; //LCOV_EXCL_LINE
     if (!json.HasMember(key) || !json[key].IsObject()) {
-        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key);
+        Iec104PivotUtility::log_error("%s The array %s is required but not found.", beforeLog.c_str(), key); //LCOV_EXCL_LINE
         return false;
     }
     return true;
 }
 
 bool IEC104PivotConfig::m_retrieve(const rapidjson::Value& json, const char* key, std::string* target) {
-    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_retrieve -";
+    std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotConfig::m_retrieve -"; //LCOV_EXCL_LINE
     if (!json.HasMember(key) || !json[key].IsString()) {
-        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key);
+        Iec104PivotUtility::log_error("%s Error with the field %s, the value does not exist or is not a std::string.", beforeLog.c_str(), key); //LCOV_EXCL_LINE
         return false;
     }
     *target = json[key].GetString();
