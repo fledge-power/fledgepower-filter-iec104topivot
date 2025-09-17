@@ -32,6 +32,12 @@ static const char *default_config = QUOTE({
 				"default" : PLUGIN_NAME,
 				"readonly" : "true"
 			},
+            "enable": {
+                "description": "A switch that can be used to enable or disable execution of the filter.",
+                "displayName": "Enabled",
+                "type": "boolean",
+                "default": "true"
+            },
             "exchanged_data": {
                     "description" : "exchanged data list",
                     "type" : "JSON",
