@@ -102,6 +102,7 @@ jobs:
           cd build 
           make
           make iec104_pivot_filter_coverage_sonar
+          ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
       - name: Run sonar-scanner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,7 +110,7 @@ jobs:
         run: |
           sonar-scanner \
           --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" \
-          --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
+          --define sonar.cfamily.compile-commands=compile_commands.json \
           --define sonar.organization="fledge-power" \
           --define sonar.projectKey="fledge-power_fledgepower-filter-iec104topivot" \
           --define sonar.inclusions="src/*,include/*" \
