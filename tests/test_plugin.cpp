@@ -237,6 +237,18 @@ static string exchanged_data = QUOTE({
                                   "typeid":"M_ST_TB_1"
                                }
                             ]
+                        },
+                        {
+                            "label":"TS_PRT.INF",
+                            "pivot_id":"ID-45-922",
+                            "pivot_type":"SpsTyp",
+                            "protocols":[
+                               {
+                                  "name":"iec104",
+                                  "address":"45-922",
+                                  "typeid":"M_SP_TB_1"
+                               }
+                            ]
                         }
                     ]
                 }
@@ -5141,7 +5153,7 @@ TEST(PivotIEC104Plugin, BscTyp_to_M_ST_TA_1)
 
     ASSERT_NE(nullptr, bscTyp);
 
-    bscTyp->setIdentifier("ID-45-920");
+    bscTyp->setIdentifier("ID-45-921");
     bscTyp->setCause(3); /* COT = spont */
     bscTyp->setPosVal(1,true);
     bscTyp->addQuality(false, false, false, false, false, false);
@@ -5209,6 +5221,71 @@ TEST(PivotIEC104Plugin, BscTyp_to_M_ST_TA_1)
     ASSERT_TRUE(isValueStr(doValue));
     ASSERT_EQ("[1,true]", getValueStr(doValue));
 
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, PrtInf_not_transmitted)
+{
+    outputHandlerCalled = 0;
+
+    PivotDataObject* spsTyp = new PivotDataObject("GTIS", "SpsTyp");
+
+    ASSERT_NE(nullptr, spsTyp);
+
+    spsTyp->setIdentifier("ID-45-922_not_transmitted");
+    spsTyp->setCause(3); /* COT = spont */
+    spsTyp->setPosVal(1,true);
+    spsTyp->addQuality(false, false, false, false, false, false);
+
+    Datapoint* dp = spsTyp->toDatapoint();
+
+    delete spsTyp;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TS_PRT.INF"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    //The reading should not be converted as IEC104DataObject
+    Datapoint* pivot = getDatapoint(lastReading, "PIVOT");
+    ASSERT_NE(nullptr, pivot);
+    Datapoint* gtis = getChild(pivot, "GTIS");
+    ASSERT_NE(nullptr, gtis);
+    Datapoint* typ = getChild(gtis, "SpsTyp");
+    ASSERT_NE(nullptr, typ);
+    
+    Datapoint* pivotId = getChild(gtis, "Identifier");
+    ASSERT_NE(nullptr, pivotId);
+    ASSERT_TRUE(isValueStr(pivotId));
+    ASSERT_EQ("ID-45-922_not_transmitted", getValueStr(pivotId));
 
     plugin_shutdown(handle);
 }
