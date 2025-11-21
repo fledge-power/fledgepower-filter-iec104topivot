@@ -925,16 +925,15 @@ IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp)
 
     try {
         PivotDataObject pivotObject(sourceDp);
-        std::string& pivotId = pivotObject.getIdentifier();
+        const std::string& pivotId = pivotObject.getIdentifier();
         IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByPivotId(pivotId);
         
         if(exchangeConfig){
             convertedDatapoint = pivotObject.toIec104DataObject(exchangeConfig);
         }
         else {
-            Iec104PivotUtility::log_debug("%s PivotId '%s' not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
+            Iec104PivotUtility::log_warn("%s PivotId '%s' not found in exchangedData, ensure that this is intentional", //LCOV_EXCL_LINE
                                              beforeLog.c_str(), pivotId.c_str()); //LCOV_EXCL_LINE
-            convertedDatapoint = new Datapoint(sourceDp->getName(),sourceDp->getData());
         }
     }
     catch (PivotObjectException& e)
@@ -1046,6 +1045,12 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
                     if (convertedDp) {
                         convertedDatapoints.push_back(convertedDp);
+                    }
+                    else {
+                        Iec104PivotUtility::log_debug("%s PivotId not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
+                                                        beforeLog.c_str()); //LCOV_EXCL_LINE
+                        Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
+                        convertedDatapoints.push_back(dpCopy);
                     }
                 }
                 else {

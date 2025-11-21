@@ -5289,3 +5289,137 @@ TEST(PivotIEC104Plugin, PrtInf_not_transmitted)
 
     plugin_shutdown(handle);
 }
+
+TEST(PivotIEC104Plugin, PluginIngestWrongLabel)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+
+    dataobjects.push_back(createDataObject(1,"M_ME_NA_1", 45, 984, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false));
+
+    Reading* reading = new Reading(std::string("CM1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "data_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_ME_NA_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(984, getValueInt(doIoa));
+
+    Datapoint* doCot= getChild(dataobject, "do_cot");
+    ASSERT_NE(nullptr, doCot);
+    ASSERT_TRUE(isValueInt(doCot));
+    ASSERT_EQ(3, getValueInt(doCot));
+
+    Datapoint* doValue= getChild(dataobject, "do_value");
+    ASSERT_NE(nullptr, doValue);
+    ASSERT_TRUE(isValueInt(doValue));
+    ASSERT_EQ(1, getValueInt(doValue));
+
+    plugin_shutdown(handle);
+}
+
+TEST(PivotIEC104Plugin, PluginIngestWrongDataPointName)
+{
+    outputHandlerCalled = 0;
+
+    vector<Datapoint*> dataobjects;
+    
+    Datapoint* dp = createDataObject(1,"M_ME_NA_1", 45, 984, 3, (int64_t)1, false, false, false, false, false, 0, false, false, false);
+    dp->setName("wrong_object");
+    dataobjects.push_back(dp);
+
+    Reading* reading = new Reading(std::string("TM1"), dataobjects);
+
+    reading->setId(1); // Required: otherwise there will be a "move depends on unitilized value" error
+
+    vector<Reading*> readings;
+
+    readings.push_back(reading);
+
+    ReadingSet readingSet;
+
+    readingSet.append(readings);
+
+    ConfigCategory config("exchanged_data", exchanged_data);
+
+    config.setItemsValueFromDefault();
+
+    string configValue = config.getValue("exchanged_data");
+
+    PLUGIN_HANDLE handle = plugin_init(&config, NULL, testOutputStream);
+
+    ASSERT_TRUE(handle != nullptr);
+
+    plugin_ingest(handle, &readingSet);
+
+    ASSERT_EQ(1, outputHandlerCalled);
+
+    ASSERT_NE(nullptr, lastReading);
+
+    Datapoint* dataobject = getDatapoint(lastReading, "wrong_object");
+    ASSERT_NE(nullptr, dataobject);
+    Datapoint* doType = getChild(dataobject, "do_type");
+    ASSERT_NE(nullptr, doType);
+    ASSERT_TRUE(isValueStr(doType));
+    ASSERT_EQ("M_ME_NA_1", getValueStr(doType));
+
+    Datapoint* doCa= getChild(dataobject, "do_ca");
+    ASSERT_NE(nullptr, doCa);
+    ASSERT_TRUE(isValueInt(doCa));
+    ASSERT_EQ(45, getValueInt(doCa));
+
+    Datapoint* doIoa= getChild(dataobject, "do_ioa");
+    ASSERT_NE(nullptr, doIoa);
+    ASSERT_TRUE(isValueInt(doIoa));
+    ASSERT_EQ(984, getValueInt(doIoa));
+
+    Datapoint* doCot= getChild(dataobject, "do_cot");
+    ASSERT_NE(nullptr, doCot);
+    ASSERT_TRUE(isValueInt(doCot));
+    ASSERT_EQ(3, getValueInt(doCot));
+
+    Datapoint* doValue= getChild(dataobject, "do_value");
+    ASSERT_NE(nullptr, doValue);
+    ASSERT_TRUE(isValueInt(doValue));
+    ASSERT_EQ(1, getValueInt(doValue));
+
+    plugin_shutdown(handle);
+}
