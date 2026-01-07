@@ -918,15 +918,23 @@ IEC104PivotFilter::convertOperationObjectToPivot(std::vector<Datapoint*> datapoi
 }
 
 Datapoint*
-IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig)
+IEC104PivotFilter::convertDatapointToIEC104DataObject(Datapoint* sourceDp)
 {
     std::string beforeLog = Iec104PivotUtility::PluginName + " - IEC104PivotFilter::convertDatapointToIEC104DataObject -"; //LCOV_EXCL_LINE
     Datapoint* convertedDatapoint = nullptr;
 
     try {
         PivotDataObject pivotObject(sourceDp);
-
-        convertedDatapoint = pivotObject.toIec104DataObject(exchangeConfig);
+        const std::string& pivotId = pivotObject.getIdentifier();
+        IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByPivotId(pivotId);
+        
+        if(exchangeConfig){
+            convertedDatapoint = pivotObject.toIec104DataObject(exchangeConfig);
+        }
+        else {
+            Iec104PivotUtility::log_warn("%s PivotId '%s' not found in exchangedData, ensure that this is intentional", //LCOV_EXCL_LINE
+                                             beforeLog.c_str(), pivotId.c_str()); //LCOV_EXCL_LINE
+        }
     }
     catch (PivotObjectException& e)
     {
@@ -1012,45 +1020,46 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
 
         else{
-            IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByLabel(assetName);
-
-            if(exchangeConfig){
-                for (Datapoint* dp : datapoints) {
-                    if (dp->getName() == "data_object") {
+            for (Datapoint* dp : datapoints) {
+                if (dp->getName() == "data_object") {                    
+                    IEC104PivotDataPoint* exchangeConfig = m_config.getExchangeDefinitionsByLabel(assetName);
+                    
+                    if(exchangeConfig){
                         Datapoint* convertedDp = convertDataObjectToPivot(dp, exchangeConfig);
-
                         if (convertedDp) {
                             convertedDatapoints.push_back(convertedDp);
                         }
                         else {
-                          Iec104PivotUtility::log_error("%s Failed to convert object", beforeLog.c_str()); //LCOV_EXCL_LINE
-                        }
-                    }
-
-                    else if (dp->getName() == "PIVOT") {
-                        Datapoint* convertedDp = convertDatapointToIEC104DataObject(dp, exchangeConfig);
-
-                        if (convertedDp) {
-                            convertedDatapoints.push_back(convertedDp);
+                            Iec104PivotUtility::log_error("%s Failed to convert object", beforeLog.c_str()); //LCOV_EXCL_LINE
                         }
                     }
                     else {
-                        Iec104PivotUtility::log_debug("%s Unhandled datapoint type '%s', forwarding reading unchanged", //LCOV_EXCL_LINE
-                                                    beforeLog.c_str(), dp->getName().c_str()); //LCOV_EXCL_LINE
+                        Iec104PivotUtility::log_debug("%s Asset '%s' not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
+                                            beforeLog.c_str(), assetName.c_str()); //LCOV_EXCL_LINE
                         Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
                         convertedDatapoints.push_back(dpCopy);
                     }
                 }
-            }
-            else {
-                Iec104PivotUtility::log_debug("%s Asset '%s' not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
-                                            beforeLog.c_str(), assetName.c_str()); //LCOV_EXCL_LINE
-                for (Datapoint* dp : datapoints) {
+                else if (dp->getName() == "PIVOT") {
+                    Datapoint* convertedDp = convertDatapointToIEC104DataObject(dp);
+
+                    if (convertedDp) {
+                        convertedDatapoints.push_back(convertedDp);
+                    }
+                    else {
+                        Iec104PivotUtility::log_debug("%s PivotId not found in exchangedData, forwarding reading unchanged", //LCOV_EXCL_LINE
+                                                        beforeLog.c_str()); //LCOV_EXCL_LINE
+                        Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
+                        convertedDatapoints.push_back(dpCopy);
+                    }
+                }
+                else {
+                    Iec104PivotUtility::log_debug("%s Unhandled datapoint type '%s', forwarding reading unchanged", //LCOV_EXCL_LINE
+                                                    beforeLog.c_str(), dp->getName().c_str()); //LCOV_EXCL_LINE
                     Datapoint* dpCopy = new Datapoint(dp->getName(),dp->getData());
                     convertedDatapoints.push_back(dpCopy);
                 }
             }
-
         }
 
         reading->removeAllDatapoints();
