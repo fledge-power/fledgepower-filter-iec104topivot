@@ -12,14 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       tags:
-        description: 'Define the tag'
-        required: false
-        type: choice
-        options:
-          - v2.0.1
-          - v2.0.0
-          - v1.2.1
-          - v1.2.0
+        description: 'Define the tag (ex: v2.3.1)'
+        required: true
+        type: string
   
 jobs:
   build:
