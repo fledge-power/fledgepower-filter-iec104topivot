@@ -90,7 +90,7 @@ private:
 
     Datapoint* convertOperationObjectToPivot(std::vector<Datapoint*> sourceDp);
 
-    Datapoint* convertDatapointToIEC104DataObject(Datapoint* sourceDp, IEC104PivotDataPoint* exchangeConfig);
+    Datapoint* convertDatapointToIEC104DataObject(Datapoint* sourceDp);
 
     std::vector<Datapoint*> convertReadingToIEC104OperationObject(Datapoint* datapoints);
 
