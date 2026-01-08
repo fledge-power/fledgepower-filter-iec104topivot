@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - 349-improve-ci
     tags:
       - v*
   pull_request:
