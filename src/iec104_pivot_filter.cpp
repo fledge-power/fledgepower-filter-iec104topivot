@@ -1072,6 +1072,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
 
         if (reading->getReadingData().size() == 0) {
+            delete reading;
             readIt = readings->erase(readIt);
         }
         else {
