@@ -259,6 +259,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         return nullptr;
     }
 
+    // Ignore absence of timestamp if cot is INROGEN
     if(!attributeFound["do_ts"] && hasASDUTimestamp(dataObject.doType)) {
         Iec104PivotUtility::log_warn("%s Data object has ASDU type with timestamp (%s), but no timestamp was received", //LCOV_EXCL_LINE
                                     beforeLog.c_str(), dataObject.doType.c_str()); //LCOV_EXCL_LINE

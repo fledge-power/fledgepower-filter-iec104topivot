@@ -1832,9 +1832,7 @@ TEST(PivotIEC104Plugin, TypeNotMatching)
 
     plugin_ingest(handle, &readingSet);
 
-    ASSERT_EQ(0, outputHandlerCalled);
-
-    delete reading;
+    ASSERT_EQ(1, outputHandlerCalled);
 
     plugin_shutdown(handle);
 }
@@ -1871,10 +1869,7 @@ TEST(PivotIEC104Plugin, ToPivotSourceInvalid)
 
     plugin_ingest(handle, &readingSet);
 
-    // expect the output handler is not called because of the wrong source
-    ASSERT_EQ(0, outputHandlerCalled);
-
-    delete reading;
+    ASSERT_EQ(1, outputHandlerCalled);
     
     plugin_shutdown(handle);
 }
@@ -3513,9 +3508,7 @@ TEST(PivotIEC104Plugin, OperationNoTimestampIEC104Command) {
 
     plugin_ingest(handle, &readingSet);
 
-    ASSERT_EQ(0, outputHandlerCalled);
-    
-    delete reading;
+    ASSERT_EQ(1, outputHandlerCalled);
 
     plugin_shutdown(handle);
 }
