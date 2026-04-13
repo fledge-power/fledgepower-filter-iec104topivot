@@ -10,6 +10,7 @@
  */
 
 #include <config_category.h>
+#include <memory>
 
 #include "iec104_pivot_filter.hpp"
 #include "iec104_pivot_object.hpp"
@@ -1073,7 +1074,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
 
         if (reading->getReadingData().size() == 0) {
-            delete reading;
+            auto toDelete = std::unique_ptr<Reading>(reading);
             readIt = readings->erase(readIt);
         }
         else {
