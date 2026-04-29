@@ -10,6 +10,7 @@
  */
 
 #include <config_category.h>
+#include <memory>
 
 #include "iec104_pivot_filter.hpp"
 #include "iec104_pivot_object.hpp"
@@ -259,6 +260,7 @@ IEC104PivotFilter::convertDataObjectToPivot(Datapoint* sourceDp, IEC104PivotData
         return nullptr;
     }
 
+    // Ignore absence of timestamp if cot is INROGEN
     if(!attributeFound["do_ts"] && hasASDUTimestamp(dataObject.doType)) {
         Iec104PivotUtility::log_warn("%s Data object has ASDU type with timestamp (%s), but no timestamp was received", //LCOV_EXCL_LINE
                                     beforeLog.c_str(), dataObject.doType.c_str()); //LCOV_EXCL_LINE
@@ -1072,6 +1074,7 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
 
 
         if (reading->getReadingData().size() == 0) {
+            auto toDelete = std::unique_ptr<Reading>(reading);
             readIt = readings->erase(readIt);
         }
         else {
@@ -1079,16 +1082,13 @@ IEC104PivotFilter::ingest(READINGSET* readingSet)
         }
     }
 
-    if (readings->empty() == false)
-    {
-        if (m_output) {
-            Iec104PivotUtility::log_debug("%s Send %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
+    if (m_output) {
+        Iec104PivotUtility::log_debug("%s Send %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
 
-            m_output(m_outHandle, readingSet);
-        }
-        else {
-            Iec104PivotUtility::log_error("%s No function to call, discard %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
-        }
+        m_output(m_outHandle, readingSet);
+    }
+    else {
+        Iec104PivotUtility::log_error("%s No function to call, discard %lu converted readings", beforeLog.c_str(), readings->size()); //LCOV_EXCL_LINE
     }
 }
 
