@@ -38,7 +38,7 @@ public:
 
     void setTimeInMs(long ms);
 
-    int SecondSinceEpoch();
+    uint32_t SecondSinceEpoch();
     int FractionOfSecond();
     uint64_t getTimeInMs();
 
