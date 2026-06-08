@@ -180,10 +180,14 @@ uint64_t
 PivotTimestamp::getTimeInMs(){
     uint32_t timeval32;
 
-    timeval32 = m_valueArray[3];
-    timeval32 += m_valueArray[2] * 0x100;
-    timeval32 += m_valueArray[1] * 0x10000;
-    timeval32 += m_valueArray[0] * 0x1000000;
+    // Reconstruct seconds in unsigned 32-bit arithmetic. The previous form
+    // `m_valueArray[0] * 0x1000000` promoted uint8_t to int and multiplied by an
+    // int literal, which is signed-overflow UB once the top byte is >= 128
+    // (SecondSinceEpoch >= 2^31, i.e. 2038+).
+    timeval32  =  (uint32_t) m_valueArray[3];
+    timeval32 |= ((uint32_t) m_valueArray[2]) << 8;
+    timeval32 |= ((uint32_t) m_valueArray[1]) << 16;
+    timeval32 |= ((uint32_t) m_valueArray[0]) << 24;
 
     uint32_t fractionOfSecond = 0;
 
@@ -209,14 +213,16 @@ PivotTimestamp::FractionOfSecond(){
     return fractionOfSecond;
 }
 
-int
+uint32_t
 PivotTimestamp::SecondSinceEpoch(){
-    int32_t timeval32;
+    uint32_t timeval32;
 
-    timeval32 = m_valueArray[3];
-    timeval32 += m_valueArray[2] * 0x100;
-    timeval32 += m_valueArray[1] * 0x10000;
-    timeval32 += m_valueArray[0] * 0x1000000;
+    // Unsigned 32-bit reconstruction (see getTimeInMs): the signed form overflowed
+    // (UB) for the top byte >= 128, and an int return cannot represent seconds >= 2^31.
+    timeval32  =  (uint32_t) m_valueArray[3];
+    timeval32 |= ((uint32_t) m_valueArray[2]) << 8;
+    timeval32 |= ((uint32_t) m_valueArray[1]) << 16;
+    timeval32 |= ((uint32_t) m_valueArray[0]) << 24;
 
     return timeval32;
 }
@@ -260,7 +266,7 @@ PivotTimestamp::handleTimeQuality(Datapoint* timeQuality)
 PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
 {
     DatapointValue& dpv = timestampData->getData();
-    m_valueArray = new uint8_t[7];
+    m_valueArray = new uint8_t[7]();  // zero-init: guards getTimeInMs() when `t` is present but not a dict
 
     if (dpv.getType() == DatapointValue::T_DP_DICT)
     {
@@ -292,7 +298,7 @@ PivotTimestamp::PivotTimestamp(Datapoint* timestampData)
 
 PivotTimestamp::PivotTimestamp(long ms)
 {
-    m_valueArray = new uint8_t[7];
+    m_valueArray = new uint8_t[7]();  // zero-init: guards getTimeInMs() when `t` is present but not a dict
     uint32_t timeval32 = (uint32_t) (ms/ 1000LL);
 
     m_valueArray[0] = (timeval32 / 0x1000000 & 0xff);
